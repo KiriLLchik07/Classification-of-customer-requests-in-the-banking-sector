@@ -1,0 +1,32 @@
+[project]
+name = "classification-of-customer-requests-in-the-banking-sector"
+version = "0.1.0"
+description = "Классификация клиентских запросов в банковской сфере"
+authors = [
+    {name = "KiriLLchik07",email = "kirill3456777@mail.ru"}
+]
+readme = "README.md"
+requires-python = "^3.11"
+dependencies = [
+    "numpy (>=2.4.0,<3.0.0)",
+    "pandas (>=2.3.3,<3.0.0)",
+    "scikit-learn (>=1.8.0,<2.0.0)",
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "nltk (>=3.9.2,<4.0.0)",
+    "datasets (>=4.4.2,<5.0.0)",
+    "mlflow (>=3.8.1,<4.0.0)",
+    "python-dotenv (>=1.2.1,<2.0.0)",
+    "sqlalchemy (>=2.0.45,<3.0.0)",
+    "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "uvicorn (>=0.40.0,<0.41.0)",
+    "transformers (>=4.57.3,<5.0.0)",
+    "accelerate (>=1.12.0,<2.0.0)",
+    "sentencepiece (>=0.2.1,<0.3.0)",
+    "jupyter (>=1.1.1,<2.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
