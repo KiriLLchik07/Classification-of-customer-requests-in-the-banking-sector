@@ -100,7 +100,7 @@ PostgreSQL (логи и предсказания)
 ## Структура репозитория
 
 ```
-banking-intent-classifier/
+Classification-of-customer-requests-in-the-banking-sector/
 │
 ├── data/               # Данные
 ├── notebooks/          # Исследования и эксперименты
