@@ -1,4 +1,5 @@
 from collections import Counter
+import re
 
 class TextTokenizer:
     def __init__(
@@ -45,7 +46,9 @@ class TextTokenizer:
         ]
 
     def _tokenize(self, text: str) -> list[str]:
-        return text.lower().split()
+        text = text.lower()
+        text = re.sub(r"[^a-z0-9\s]", "", text)
+        return text.split()
 
     @property
     def vocab_size(self) -> int:

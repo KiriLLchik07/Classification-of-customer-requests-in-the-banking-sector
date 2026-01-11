@@ -7,3 +7,4 @@ notebooks/mlflow.db
 notebooks/mlruns
 
 /mlruns
+/models

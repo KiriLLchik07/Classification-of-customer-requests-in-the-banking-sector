@@ -1,8 +1,6 @@
-from torch.nn.functional import cross_entropy
 from tqdm import tqdm
 
-
-def train_one_epoch(model, dataloader, optimizer, device):
+def train_one_epoch(model, dataloader, optimizer, criterion, device):
     model.train()
     total_loss = 0
 
@@ -14,7 +12,7 @@ def train_one_epoch(model, dataloader, optimizer, device):
         lengths = batch["lengths"].to(device)
 
         logits = model(input_ids, lengths)
-        loss = cross_entropy(logits, labels)
+        loss = criterion(logits, labels)
 
         loss.backward()
         optimizer.step()
