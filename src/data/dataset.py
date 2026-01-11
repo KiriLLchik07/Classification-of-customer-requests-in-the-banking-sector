@@ -1,8 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 
-from src.data.tokenizer import TextTokenizer
-
+from src.features.tokenizer import TextTokenizer
 
 class BankingDataset(Dataset):
     def __init__(

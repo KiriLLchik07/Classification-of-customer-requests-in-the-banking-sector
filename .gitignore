@@ -6,5 +6,5 @@ notebooks/catboost_info
 notebooks/mlflow.db
 notebooks/mlruns
 
-/mlruns
+/mlflow/mlruns
 /models
