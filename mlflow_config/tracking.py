@@ -4,7 +4,7 @@ from pathlib import Path
 import torch
 from src.config.settings import settings
 
-EXPERIMENT_NAME = 'Banking77_RNN'
+REGISTERED_MODEL_NAME = 'Banking77_Classifier'
 
 def setup_mlflow():
     mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
@@ -14,9 +14,9 @@ def log_rnn_experiment(model, tokenizer, metrics: dict, params: dict, run_name: 
     with mlflow.start_run(run_name=run_name):
         mlflow.log_params(params)
         mlflow.log_metrics(metrics)
-        mlflow.pytorch.log_model(model, name='model')
+        mlflow.pytorch.log_model(model, name='model', registered_model_name=REGISTERED_MODEL_NAME)
 
-        vocab_path = Path("vocab.json")
+        vocab_path = Path("vocab.pt")
         torch.save(tokenizer.word2idx, vocab_path)
         mlflow.log_artifact(vocab_path)
 
