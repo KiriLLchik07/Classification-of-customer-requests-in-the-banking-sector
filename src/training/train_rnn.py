@@ -11,6 +11,11 @@ from src.models.rnn.lstm_gru import RNNClassifier
 from src.training.train_one_epoch import train_one_epoch
 from src.evaluation.evaluate_rnn import evaluate
 
+from mlflow_config.tracking import log_rnn_experiment
+from mlflow_config.tracking import setup_mlflow
+
+setup_mlflow()
+
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 DATA_DIR_ROOT = PROJECT_ROOT / 'data/processed'
@@ -101,6 +106,24 @@ metrcis_lstm = train_eval_rnn_model(
 
 print(f"Результаты модели LSTM\n {metrcis_lstm['f1_macro']:.4f}\n")
 
+params_lstm = {
+    "model_type": "LSTM",
+    "embedding_dim": EMBEDDING_DIM,
+    "hidden_dim": HIDDEN_DIM,
+    "max_len": MAX_LEN,
+    "batch_size": BATCH_SIZE,
+    "learning_rate": LR,
+    "epochs": EPOCHS
+}
+
+log_rnn_experiment(
+    model=model_lstm,
+    tokenizer=tokenizer,
+    metrics={"f1_macro": metrcis_lstm['f1_macro']},
+    params=params_lstm,
+    run_name="LSTM_baseline"
+)
+
 metrcis_gru = train_eval_rnn_model(
     model_gru,
     train_dataloader,
@@ -112,6 +135,24 @@ metrcis_gru = train_eval_rnn_model(
 )
 
 print(f"Результаты модели GRU\n {metrcis_gru['f1_macro']:.4f}\n")
+
+params_gru = {
+    "model_type": "GRU",
+    "embedding_dim": EMBEDDING_DIM,
+    "hidden_dim": HIDDEN_DIM,
+    "max_len": MAX_LEN,
+    "batch_size": BATCH_SIZE,
+    "learning_rate": LR,
+    "epochs": EPOCHS
+}
+
+log_rnn_experiment(
+    model=model_gru,
+    tokenizer=tokenizer,
+    metrics={"f1_macro": metrcis_gru['f1_macro']},
+    params=params_gru,
+    run_name="GRU_baseline"
+)
 
 save_model(model_lstm, tokenizer, MODEL_SAVE_ROOT, 'lstm')
 print("LSTM модель сохранена!\n")
