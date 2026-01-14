@@ -8,13 +8,13 @@ from src.data.dataset import BankingDataset
 from src.features.collate import collate_fn
 
 from src.models.rnn.lstm_gru import RNNClassifier
-from src.training.train_one_epoch import train_one_epoch
-from src.evaluation.evaluate_rnn import evaluate
+from src.training.rnn.train_one_epoch import train_one_epoch
+from src.evaluation.rnn.evaluate_rnn import evaluate
 
 from mlflow_config.tracking import log_rnn_experiment
 from mlflow_config.tracking import setup_mlflow
 
-setup_mlflow()
+setup_mlflow("Banking77_RNN")
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -121,7 +121,8 @@ log_rnn_experiment(
     tokenizer=tokenizer,
     metrics={"f1_macro": metrcis_lstm['f1_macro']},
     params=params_lstm,
-    run_name="LSTM_baseline"
+    run_name="LSTM_baseline",
+    model_name='LSTM'
 )
 
 metrcis_gru = train_eval_rnn_model(
@@ -151,7 +152,8 @@ log_rnn_experiment(
     tokenizer=tokenizer,
     metrics={"f1_macro": metrcis_gru['f1_macro']},
     params=params_gru,
-    run_name="GRU_baseline"
+    run_name="GRU_baseline",
+    model_name="GRU"
 )
 
 save_model(model_lstm, tokenizer, MODEL_SAVE_ROOT, 'lstm')
