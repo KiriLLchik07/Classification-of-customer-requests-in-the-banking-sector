@@ -1,5 +1,5 @@
 import torch
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 
 def evaluate_transformer(model_wrapper, dataloader, device):
     model = model_wrapper.model
@@ -18,5 +18,6 @@ def evaluate_transformer(model_wrapper, dataloader, device):
 
     return {
         "classification_report": classification_report(targets, preds, output_dict=True),
-        "confusion_matrix": confusion_matrix(targets, preds)
+        "confusion_matrix": confusion_matrix(targets, preds),
+        "f1_macro": f1_score(targets, preds, average='macro')
     }

@@ -2,10 +2,13 @@ import torch
 from pathlib import Path
 import pandas as pd
 from torch.utils.data import DataLoader
+import mlflow
 
+from src.data.transformer_dataset import TransformerDataset
 from src.models.transformers.transformer import BankingTransformer
 from src.training.transformers.train_transformer import train_transformer
-from mlflow_config.tracking import setup_mlflow
+from mlflow_config.tracking import setup_mlflow, log_experiment
+from mlflow_config.registry import register_model
 from src.data.transformer_dataset import TransformerDataset
 from src.evaluation.transformers.evaluate import evaluate_transformer
 
@@ -33,7 +36,8 @@ model_wrapper_bert = BankingTransformer(
 )
 
 print("Обучение BERT модели (bert-base-uncased)\n")
-train_transformer(model_wrapper_bert, X_train, y_train, X_val, y_val, epochs=10, batch_size=16, lr=2e-5)
+model, val_metrics = train_transformer(model_wrapper_bert, X_train, y_train, X_val, y_val, epochs=10, batch_size=16, lr=2e-5)
+best_val_metric = max(val_metrics)
 
 test_ds = TransformerDataset(X_test, y_test, model_wrapper_bert.tokenizer, model_wrapper_bert.max_length)
 
@@ -42,4 +46,24 @@ test_dataloader = DataLoader(test_ds, batch_size=16)
 test_metrics_bert = evaluate_transformer(model_wrapper_bert, test_dataloader, DEVICE)
 
 print("Метрики BERT на тестирующей выборке:\n")
-print(test_metrics_bert['classification_report'])
+print(test_metrics_bert['f1_macro'])
+
+with mlflow.start_run(run_name="BERT") as run:
+    log_experiment(
+        model,
+        metrics={
+            "f1_macro_val": best_val_metric,
+            "test_f1_macro": test_metrics_bert["f1_macro"]
+        },
+        params={
+            "batch_size": 16,
+            "epochs": 10,
+            "lr": 2e-5
+        }
+    )
+
+    register_model(
+        run_id=run.info.run_id,
+        artifact_path="model",
+        model_name="Banking77_Classifier"
+    )

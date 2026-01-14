@@ -27,27 +27,11 @@ def train_transformer(model_wrapper, train_texts, train_labels, val_texts, val_l
     
     trainer = TransformerTrainer(model, optimizer, scheduler, device)
 
-    with mlflow.start_run():
-        mlflow.log_params({
-            "model": model_wrapper.model_name,
-            "epochs": epochs,
-            "batch_size": batch_size,
-            "lr": lr,
-            "max_length": model_wrapper.max_length
-        })
+    val_metrics = []
+    for epoch in range(epochs):
+        train_loss = trainer.train_epoch(train_dataloader)
+        val_loss, val_f1_macro = trainer.eval_epoch(val_dataloader)
+        print(f"Epoch {epoch + 1}: val_f1_macro={val_f1_macro:.4f}")
+        val_metrics.append(val_f1_macro)
 
-        for epoch in range(epochs):
-            train_loss = trainer.train_epoch(train_dataloader)
-            val_loss, val_f1_macro = trainer.eval_epoch(val_dataloader)
-
-            mlflow.log_metrics({
-                "train_loss": train_loss,
-                "val_loss": val_loss,
-                "val_f1_macro": val_f1_macro
-            }, step=epoch)
-
-            print(f"Epoch {epoch + 1}: val_f1_macro={val_f1_macro:.4f}")
-
-        mlflow.pytorch.log_model(model, name="model")
-
-    return model
+    return model, val_metrics
