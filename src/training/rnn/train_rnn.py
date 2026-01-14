@@ -11,7 +11,7 @@ from src.models.rnn.lstm_gru import RNNClassifier
 from src.training.rnn.train_one_epoch import train_one_epoch
 from src.evaluation.rnn.evaluate_rnn import evaluate
 
-from mlflow_config.tracking import log_rnn_experiment
+from mlflow_config.tracking import log_experiment
 from mlflow_config.tracking import setup_mlflow
 
 setup_mlflow("Banking77_RNN")
@@ -116,13 +116,12 @@ params_lstm = {
     "epochs": EPOCHS
 }
 
-log_rnn_experiment(
+log_experiment(
     model=model_lstm,
-    tokenizer=tokenizer,
     metrics={"f1_macro": metrcis_lstm['f1_macro']},
     params=params_lstm,
-    run_name="LSTM_baseline",
-    model_name='LSTM'
+    model_name='LSTM',
+    artifacts={"vocab" : "vocab.pt"}
 )
 
 metrcis_gru = train_eval_rnn_model(
@@ -147,13 +146,12 @@ params_gru = {
     "epochs": EPOCHS
 }
 
-log_rnn_experiment(
+log_experiment(
     model=model_gru,
-    tokenizer=tokenizer,
     metrics={"f1_macro": metrcis_gru['f1_macro']},
     params=params_gru,
-    run_name="GRU_baseline",
-    model_name="GRU"
+    model_name="GRU",
+    artifacts={"vocab" : "vocab.pt"}
 )
 
 save_model(model_lstm, tokenizer, MODEL_SAVE_ROOT, 'lstm')
