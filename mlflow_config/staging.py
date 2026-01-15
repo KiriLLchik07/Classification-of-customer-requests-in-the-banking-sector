@@ -45,11 +45,11 @@ if __name__ == "__main__":
     MODEL_NAME = "Banking77_Classifier"
     
     version_dict = {
-        1: ("Archived", ["Classic_ML"]), # Logistic Regression
-        2: ("Archived", ["Legacy_RNN_LSTM"]), # LSTM
-        3: ("Archived", ["Legacy_RNN_GRU"]), # GRU
-        7: ("Staging", ["BERT_best_metrics"]), # BERT
-        8: ("Production", ["Best_model", "Fast_Transformer"]) # DistilBERT
+        1: ("Archived", ["Baseline"]), # Logistic Regression
+        2: ("Archived", ["Fast", "LSTM"]), # LSTM
+        3: ("Archived", ["Fast","GRU"]), # GRU
+        7: ("Staging", ["Candidate", "BERT"]), # BERT
+        8: ("Production", ["Best", "Fast"]) # DistilBERT
     }
     
     set_model_stages_and_aliases(MODEL_NAME, version_dict)

@@ -8,17 +8,20 @@ from src.data.transformer_dataset import TransformerDataset
 from src.models.transformers.transformer import BankingTransformer
 from src.training.transformers.train_transformer import train_transformer
 from mlflow_config.tracking import setup_mlflow, log_experiment
-from mlflow_config.registry import register_model
+from mlflow_config.registry import register_model, set_model_description
+from mlflow_config.logging import log_environment, seed_everything, log_git_commit
+from mlflow_config.dataset import file_md5
 from src.evaluation.transformers.evaluate import evaluate_transformer
 
+setup_mlflow()
+
+seed_everything(42)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR_ROOT = PROJECT_ROOT / "data/processed"
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DISTILBERT_MODEL = "distilbert-base-uncased"
-
-setup_mlflow("Transformer_models")
 
 train_df = pd.read_csv(DATA_DIR_ROOT / 'train_df.csv')
 val_df = pd.read_csv(DATA_DIR_ROOT / 'val_df.csv')
@@ -36,7 +39,7 @@ model_wrapper_distilbert = BankingTransformer(
 )
 
 print("Обучение DistilBERT модели (distilbert-base-uncased)\n")
-model, val_metrics = train_transformer(model_wrapper_distilbert, X_train, y_train, X_val, y_val, epochs=10, batch_size=16, lr=2e-5)
+model, val_metrics, training_time = train_transformer(model_wrapper_distilbert, X_train, y_train, X_val, y_val, epochs=10, batch_size=16, lr=2e-5)
 best_val_metric = max(val_metrics)
 
 test_ds = TransformerDataset(X_test, y_test, model_wrapper_distilbert.tokenizer, model_wrapper_distilbert.max_length)
@@ -49,6 +52,18 @@ print("Метрики DistilBERT на тестирующей выборке:\n")
 print(test_metrics_distilbert['f1_macro'])
 
 with mlflow.start_run(run_name="DistilBERT") as run:
+    mlflow.log_param("seed", 42)
+    
+    log_environment(DEVICE)
+
+    log_git_commit()
+
+    mlflow.log_metric("training_time_sec", training_time)
+
+    mlflow.log_param("train_df_md5", file_md5(DATA_DIR_ROOT / 'train_df.csv'))
+    mlflow.log_param("val_df_md5", file_md5(DATA_DIR_ROOT / 'val_df.csv'))
+    mlflow.log_param("test_df_md5", file_md5(DATA_DIR_ROOT / 'test_df.csv'))
+
     log_experiment(
         model,
         metrics={
@@ -66,5 +81,11 @@ with mlflow.start_run(run_name="DistilBERT") as run:
         run_id=run.info.run_id,
         artifact_path="model",
         model_name="Banking77_Classifier"
+    )
+    
+    set_model_description(
+        "Banking77_Classifier",
+        version=8,
+        description="DistilBERT дообученный на датаесете Banking77. Показывает лучшее соотношение качества и скорости. Лучшая модель"
     )
 
