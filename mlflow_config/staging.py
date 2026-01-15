@@ -23,7 +23,7 @@ def set_model_stages_and_aliases(model_name: str, version_info: dict):
                 name=model_name,
                 version=version,
                 stage=stage,
-                archive_existing_versions=False
+                archive_existing_versions=(stage == "Production")
             )
             print(f"Версия {version} -> stage: {stage}")
             
@@ -45,9 +45,11 @@ if __name__ == "__main__":
     MODEL_NAME = "Banking77_Classifier"
     
     version_dict = {
-        1: ("Archived", ["Classic_ML"]),   # Logistic Regression
-        2: ("Staging", ["Best_RNN"]),   # LSTM
-        3: ("Staging", ["Test_RNN"])             # GRU
+        1: ("Archived", ["Classic_ML"]), # Logistic Regression
+        2: ("Archived", ["Legacy_RNN_LSTM"]), # LSTM
+        3: ("Archived", ["Legacy_RNN_GRU"]), # GRU
+        7: ("Staging", ["BERT_best_metrics"]), # BERT
+        8: ("Production", ["Best_model", "Fast_Transformer"]) # DistilBERT
     }
     
     set_model_stages_and_aliases(MODEL_NAME, version_dict)

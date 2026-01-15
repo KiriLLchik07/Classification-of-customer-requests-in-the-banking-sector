@@ -1,0 +1,70 @@
+import torch
+from pathlib import Path
+import pandas as pd
+import mlflow
+from torch.utils.data import DataLoader
+
+from src.data.transformer_dataset import TransformerDataset
+from src.models.transformers.transformer import BankingTransformer
+from src.training.transformers.train_transformer import train_transformer
+from mlflow_config.tracking import setup_mlflow, log_experiment
+from mlflow_config.registry import register_model
+from src.evaluation.transformers.evaluate import evaluate_transformer
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DATA_DIR_ROOT = PROJECT_ROOT / "data/processed"
+
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+DISTILBERT_MODEL = "distilbert-base-uncased"
+
+setup_mlflow("Transformer_models")
+
+train_df = pd.read_csv(DATA_DIR_ROOT / 'train_df.csv')
+val_df = pd.read_csv(DATA_DIR_ROOT / 'val_df.csv')
+test_df = pd.read_csv(DATA_DIR_ROOT / 'test_df.csv')
+
+X_train, y_train = train_df['text'].tolist(), train_df['label'].tolist()
+X_val, y_val = val_df['text'].tolist(), val_df['label'].tolist()
+X_test, y_test = test_df['text'].tolist(), test_df['label'].tolist()
+
+model_wrapper_distilbert = BankingTransformer(
+    model_name=DISTILBERT_MODEL,
+    num_labels=len(set(y_train)),
+    max_length=64,
+    device=DEVICE
+)
+
+print("Обучение DistilBERT модели (distilbert-base-uncased)\n")
+model, val_metrics = train_transformer(model_wrapper_distilbert, X_train, y_train, X_val, y_val, epochs=10, batch_size=16, lr=2e-5)
+best_val_metric = max(val_metrics)
+
+test_ds = TransformerDataset(X_test, y_test, model_wrapper_distilbert.tokenizer, model_wrapper_distilbert.max_length)
+
+test_dataloader = DataLoader(test_ds, batch_size=16)
+
+test_metrics_distilbert = evaluate_transformer(model_wrapper_distilbert, test_dataloader, DEVICE)
+
+print("Метрики DistilBERT на тестирующей выборке:\n")
+print(test_metrics_distilbert['f1_macro'])
+
+with mlflow.start_run(run_name="DistilBERT") as run:
+    log_experiment(
+        model,
+        metrics={
+            "f1_macro_val": best_val_metric,
+            "test_f1_macro": test_metrics_distilbert["f1_macro"]
+        },
+        params={
+            "batch_size": 16,
+            "epochs": 10,
+            "lr": 2e-5
+        }
+    )
+
+    register_model(
+        run_id=run.info.run_id,
+        artifact_path="model",
+        model_name="Banking77_Classifier"
+    )
+
