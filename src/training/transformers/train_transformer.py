@@ -1,7 +1,8 @@
 from torch.utils.data import DataLoader
-import mlflow
+import time
 from transformers import get_linear_schedule_with_warmup
 from torch.optim import AdamW
+import mlflow
 
 from src.data.transformer_dataset import TransformerDataset
 from src.training.transformers.transformer_trainer import TransformerTrainer
@@ -28,10 +29,12 @@ def train_transformer(model_wrapper, train_texts, train_labels, val_texts, val_l
     trainer = TransformerTrainer(model, optimizer, scheduler, device)
 
     val_metrics = []
+    strart = time.time()
     for epoch in range(epochs):
         train_loss = trainer.train_epoch(train_dataloader)
         val_loss, val_f1_macro = trainer.eval_epoch(val_dataloader)
         print(f"Epoch {epoch + 1}: val_f1_macro={val_f1_macro:.4f}")
         val_metrics.append(val_f1_macro)
+    training_time = time.time() - strart
 
-    return model, val_metrics
+    return model, val_metrics, training_time

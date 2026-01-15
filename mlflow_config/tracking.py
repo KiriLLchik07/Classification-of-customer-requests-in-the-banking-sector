@@ -2,11 +2,12 @@ import mlflow
 import mlflow.pytorch
 from src.config.settings import settings
 
-REGISTERED_MODEL_NAME = 'Banking77_Classifier'
+REGISTERED_MODEL_NAME = "Banking77_Classifier"
+EXPERIMENT_NAME = "banking77-intent-classification"
 
-def setup_mlflow(set_experiment_name: str):
+def setup_mlflow():
     mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
-    mlflow.set_experiment(set_experiment_name)
+    mlflow.set_experiment(EXPERIMENT_NAME)
 
 def log_experiment(model, metrics: dict, params: dict, artifacts: dict | None = None):
     mlflow.log_params(params)
