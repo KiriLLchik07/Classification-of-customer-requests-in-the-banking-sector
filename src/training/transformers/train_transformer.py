@@ -2,7 +2,6 @@ from torch.utils.data import DataLoader
 import time
 from transformers import get_linear_schedule_with_warmup
 from torch.optim import AdamW
-import mlflow
 
 from src.data.transformer_dataset import TransformerDataset
 from src.training.transformers.transformer_trainer import TransformerTrainer
