@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 import mlflow
 from torch.utils.data import DataLoader
+import json
 
 from src.data.transformer_dataset import TransformerDataset
 from src.models.transformers.transformer import BankingTransformer
@@ -12,6 +13,8 @@ from mlflow_config.registry import register_model, set_model_description
 from mlflow_config.logging import log_environment, seed_everything, log_git_commit
 from mlflow_config.dataset import file_md5
 from src.evaluation.transformers.evaluate import evaluate_transformer
+
+from src.mlflow_model.log_pyfunc_model import log_pyfunc_model
 
 setup_mlflow()
 
@@ -64,6 +67,20 @@ with mlflow.start_run(run_name="DistilBERT") as run:
     mlflow.log_param("val_df_md5", file_md5(DATA_DIR_ROOT / 'val_df.csv'))
     mlflow.log_param("test_df_md5", file_md5(DATA_DIR_ROOT / 'test_df.csv'))
 
+    ARTIFACT_DIR = PROJECT_ROOT / "models/artifacts/saved_model"
+    ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+    model_wrapper_distilbert.model.save_pretrained(ARTIFACT_DIR)
+    model_wrapper_distilbert.tokenizer.save_pretrained(ARTIFACT_DIR)
+
+    label_mapping = {i: label for i, label in enumerate(sorted(set(y_train)))}
+
+    LABEL_MAPPING_PATH = ARTIFACT_DIR / "label_mapping.json"
+
+    with open(LABEL_MAPPING_PATH, "w") as f:
+        json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+
+    log_pyfunc_model(model_dir=str(ARTIFACT_DIR), label_mapping_path=str(LABEL_MAPPING_PATH))
+
     log_experiment(
         model,
         metrics={
@@ -88,4 +105,3 @@ with mlflow.start_run(run_name="DistilBERT") as run:
         version=8,
         description="DistilBERT дообученный на датаесете Banking77. Показывает лучшее соотношение качества и скорости. Лучшая модель"
     )
-

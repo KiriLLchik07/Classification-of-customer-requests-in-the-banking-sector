@@ -20,8 +20,8 @@ class PyFunc(mlflow.pyfunc.PythonModel):
 
         self.label_mapping = context.artifacts["label_mapping"]
 
-    def predict(self, model_input: pd.DataFrame):
-        texts = model_input["texts"].tolist()
+    def predict(self, context, model_input: pd.DataFrame):
+        texts = model_input["text"].tolist()
 
         inputs = self.tokenizer(texts, padding=True, truncation=True, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
