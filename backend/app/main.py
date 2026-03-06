@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.api.v1.predict import router as predict_router
+from app.api.v1.models import router as models_router
 from app.services.model_service import ModelService
 
 model_service = ModelService()
@@ -20,6 +21,11 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+app.include_router(
+    models_router,
+    prefix="/api/v1"
+)
 
 app.include_router(
     predict_router,

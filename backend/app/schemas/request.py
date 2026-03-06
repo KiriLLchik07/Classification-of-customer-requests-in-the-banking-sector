@@ -6,3 +6,4 @@ class PredictRequest(BaseModel):
         min_length=3,
         max_length=512
     )
+    model_name: str
