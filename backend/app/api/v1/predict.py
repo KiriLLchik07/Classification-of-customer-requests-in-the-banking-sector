@@ -1,15 +1,14 @@
-from fastapi import APIRouter, Depends
-
+from fastapi import APIRouter
 from app.schemas.request import PredictRequest
-from app.schemas.responce import PredictResponse
-from app.dependencies.model_loader import get_model
-from app.services.inference_servic import InferenceService
+from app.schemas.response import PredictResponse
+from app.services.model_service import ModelService
 
 router = APIRouter()
 
-@router.post("/predict", response_model=PredictResponse)
-def predict(request: PredictRequest, model=Depends(get_model)):
-    service = InferenceService(model)
-    pred = service.predict(request.text)
+model_service = ModelService()
 
-    return PredictResponse(prediction=int(pred))
+@router.post("/predict", response_model=PredictResponse)
+def predict(request: PredictRequest):
+    prediction = model_service.predict(request.text)
+
+    return PredictResponse(prediction=prediction)

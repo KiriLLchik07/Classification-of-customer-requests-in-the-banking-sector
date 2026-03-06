@@ -10,7 +10,7 @@ from sklearn.metrics import confusion_matrix
 
 from src.data.transformer_dataset import TransformerDataset
 from src.evaluation.transformers.error_analyzer import error_analysis
-from src.config.settings import settings
+from config.settings import settings
 
 mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
 
