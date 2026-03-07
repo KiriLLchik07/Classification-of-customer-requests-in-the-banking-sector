@@ -33,7 +33,7 @@ class PyFuncModel(mlflow.pyfunc.PythonModel):
         """
         texts = model_input["text"].tolist()
 
-        inputs = self.tokenizer(texts, padding=True, truncation=True, max_legth=64, return_tensors="pt")
+        inputs = self.tokenizer(texts, padding=True, truncation=True, max_length=64, return_tensors="pt")
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():

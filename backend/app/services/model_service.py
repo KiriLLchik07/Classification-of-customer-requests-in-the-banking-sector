@@ -1,4 +1,5 @@
-import mlflow.pyfunc
+from mlflow.pyfunc import PyFuncModel
+import mlflow
 import pandas as pd
 from functools import lru_cache
 import logging
@@ -7,7 +8,7 @@ logger = logging.getLogger("banking77")
 
 class ModelService:
     def __init__(self):
-        self.models: dict = {}
+        self.models: dict[str, PyFuncModel] = {}
 
     def load_model(self, model_name: str):
         model_uri = f"models:/{model_name}/Production"
