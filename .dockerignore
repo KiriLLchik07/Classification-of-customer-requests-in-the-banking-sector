@@ -11,3 +11,6 @@ reports
 
 .venv
 .env
+.poetry/
+.idea/
+.vscode/
