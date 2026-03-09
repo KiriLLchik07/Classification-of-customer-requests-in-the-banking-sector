@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     """ Кэшированный инстанс настроек """
-    return Settings
+    return Settings()
 
 settings = get_settings()
 # (f"sqlite:///{(BASE_DIR / 'mlflow_config' / 'mlflow.db').as_posix()}")
