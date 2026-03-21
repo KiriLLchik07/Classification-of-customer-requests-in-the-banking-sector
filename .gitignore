@@ -1,4 +1,4 @@
-/config
+/config/environment.env
 .venv
 __pycache__/
 /data

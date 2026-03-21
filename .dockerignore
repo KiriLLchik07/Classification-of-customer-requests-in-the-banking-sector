@@ -1,0 +1,16 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+
+data
+notebooks
+mlruns
+models
+reports
+
+.venv
+.env
+.poetry/
+.idea/
+.vscode/

@@ -1,6 +1,6 @@
 import mlflow
 import mlflow.pytorch
-from src.config.settings import settings
+from config.settings import settings
 
 REGISTERED_MODEL_NAME = "Banking77_Classifier"
 EXPERIMENT_NAME = "banking77-intent-classification"

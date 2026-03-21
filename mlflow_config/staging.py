@@ -1,6 +1,6 @@
 import mlflow
 from mlflow.exceptions import RestException
-from src.config.settings import settings
+from config.settings import settings
 
 def set_model_stages_and_aliases(model_name: str, version_info: dict):
     """

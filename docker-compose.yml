@@ -1,0 +1,76 @@
+services:
+  mlflow:
+    image: python:3.11-slim
+    container_name: banking77_mlflow
+    working_dir: /app
+    command: >
+      bash -c "pip install mlflow==3.8.1 && 
+               mlflow server 
+               --host 0.0.0.0 
+               --port 5000 
+               --backend-store-uri sqlite:///mlflow.db 
+               --default-artifact-root ./mlruns"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow_data:/app
+      - ./mlflow_data/mlflow.db:/app/mlflow.db
+    networks:
+      - banking77_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: banking77_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - banking77_network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: banking77_api
+    ports:
+      - "8000:8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    networks:
+      - banking77_network
+    restart: unless-stopped
+    volumes:
+      - ./backend/logs:/app/logs
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MODEL_NAME: Banking77_DistilBERT
+      MODEL_STAGE: Production
+      DEBUG: false
+
+networks:
+  banking77_network:
+    driver: bridge

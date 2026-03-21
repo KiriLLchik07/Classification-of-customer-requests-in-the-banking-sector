@@ -1,0 +1,3 @@
+{"asctime": "2026-03-15:48:1315:48:13", "levelname": "INFO", "name": "Banking77", "message": "Logging initialized | level=INFO"}
+{"asctime": "2026-03-15:48:1315:48:13", "levelname": "INFO", "name": "Banking77", "message": "Start application"}
+{"asctime": "2026-03-15:52:1915:52:19", "levelname": "INFO", "name": "Banking77", "message": "Model loaded successfully. Model name: Banking77_DistilBERT"}
