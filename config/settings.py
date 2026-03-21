@@ -38,4 +38,4 @@ def get_settings() -> Settings:
     return Settings()
 
 settings = get_settings()
-# (f"sqlite:///{(BASE_DIR / 'mlflow_config' / 'mlflow.db').as_posix()}")
+# (f"sqlite:///{(BASE_DIR / 'mlflow_data' / 'mlflow.db').as_posix()}")

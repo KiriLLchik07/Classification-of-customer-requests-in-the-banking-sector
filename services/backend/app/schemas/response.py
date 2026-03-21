@@ -5,15 +5,15 @@ class PredictResponse(BaseModel):
     """Схема ответа для эндпоинта /predict"""
     prediction: str = Field(
         ...,
-        description="Предсказанный класс запроса"
+        description="Predicted query class"
     )
     model_name: str = Field(
         ...,
-        description="Название модели, использованной для предсказания"
+        description="The name of the model used for prediction"
     )
     confidence: Optional[float] = Field(
         None,
-        description="Уверенность модели в диапазоне (0-1)",
+        description="The confidence of the model in the range (0-1)",
         ge=0.0,
         le=1.0,
     )

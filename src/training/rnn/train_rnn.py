@@ -11,10 +11,10 @@ from src.models.rnn.lstm_gru import RNNClassifier
 from src.training.rnn.train_one_epoch import train_one_epoch
 from src.evaluation.rnn.evaluate_rnn import evaluate
 
-from mlflow_config.tracking import log_experiment
-from mlflow_config.tracking import setup_mlflow
+from src.mlops.mlflow.tracking import log_experiment
+from src.mlops.mlflow.tracking import setup_mlflow
 
-setup_mlflow("Banking77_RNN")
+setup_mlflow()
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 

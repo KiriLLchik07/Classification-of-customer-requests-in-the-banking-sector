@@ -7,10 +7,10 @@ import mlflow
 from src.data.transformer_dataset import TransformerDataset
 from src.models.transformers.transformer import BankingTransformer
 from src.training.transformers.train_transformer import train_transformer
-from mlflow_config.tracking import setup_mlflow, log_experiment
-from mlflow_config.registry import register_model, set_model_description
-from mlflow_config.logging import log_environment, seed_everything, log_git_commit
-from mlflow_config.dataset import file_md5
+from src.mlops.mlflow.tracking import setup_mlflow, log_experiment
+from src.mlops.mlflow.registry import register_model, set_model_description
+from src.mlops.mlflow.logging import log_environment, seed_everything, log_git_commit
+from src.mlops.mlflow.dataset import file_md5
 from src.evaluation.transformers.evaluate import evaluate_transformer
 
 seed_everything(42)
@@ -72,17 +72,18 @@ with mlflow.start_run(run_name="BERT") as run:
             "batch_size": 16,
             "epochs": 10,
             "lr": 2e-5
-        }
+        },
+        model_artifact_path="pytorch-model"
     )
 
-    register_model(
+    version = register_model(
         run_id=run.info.run_id,
-        artifact_path="model",
+        artifact_path="pytorch-model",
         model_name="Banking77_Classifier"
     )
 
     set_model_description(
         "Banking77_Classifier",
-        version=8,
+        version=version,
         description="BERT дообученный на датаесете Banking77. Показывает лучшее значение метрики f1_macro, однако скорость низкая."
     )

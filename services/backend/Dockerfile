@@ -3,14 +3,14 @@ FROM python:3.11-slim
 WORKDIR /app
 
 RUN pip install --no-cache-dir poetry==2.2.1
-COPY backend/pyproject.toml backend/poetry.lock* ./
+COPY services/backend/pyproject.toml services/backend/poetry.lock* ./
 
 RUN pip install torch
 
 RUN poetry config virtualenvs.create false \
     && poetry install --no-interaction --no-ansi --no-root
 
-COPY backend/app/ ./app/
+COPY services/backend/app/ ./app/
 COPY config/ ./config/
 
 RUN mkdir -p /app/logs

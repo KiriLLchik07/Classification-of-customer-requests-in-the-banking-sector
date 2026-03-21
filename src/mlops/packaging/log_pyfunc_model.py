@@ -46,9 +46,9 @@ class PyFuncModel(mlflow.pyfunc.PythonModel):
 
         return pd.DataFrame({"prediction": labels})
 
-def log_pyfunc_model(model_dir: str):
+def log_pyfunc_model(model_dir: str, artifact_path: str = "model"):
     mlflow.pyfunc.log_model(
-        artifact_path="model", 
+        artifact_path=artifact_path,
         python_model=PyFuncModel(), 
         artifacts={"model": model_dir},
         pip_requirements=["torch", "transformers", "pandas", "mlflow"]    

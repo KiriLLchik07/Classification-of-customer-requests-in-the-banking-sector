@@ -5,11 +5,12 @@ services:
     working_dir: /app
     command: >
       bash -c "pip install mlflow==3.8.1 && 
+               mkdir -p /app/artifacts &&
                mlflow server 
                --host 0.0.0.0 
                --port 5000 
                --backend-store-uri sqlite:///mlflow.db 
-               --default-artifact-root ./mlruns"
+               --default-artifact-root /app/artifacts"
     ports:
       - "5000:5000"
     volumes:
@@ -36,7 +37,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: services/backend/Dockerfile
     container_name: banking77_api
     ports:
       - "8000:8000"
@@ -49,7 +50,7 @@ services:
       - banking77_network
     restart: unless-stopped
     volumes:
-      - ./backend/logs:/app/logs
+      - ./services/backend/logs:/app/logs
     healthcheck:
       test:
         [

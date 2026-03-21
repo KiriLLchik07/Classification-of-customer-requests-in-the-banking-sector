@@ -2,6 +2,7 @@ from mlflow.pyfunc import PyFuncModel
 import mlflow
 import pandas as pd
 import logging
+from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +11,7 @@ class ModelService:
     Сервис для загрузки моделей из MLflow и инференса.
     """
     def __init__(self):
+        mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
         self.models: dict[str, PyFuncModel] = {}
 
     def load_model(self, model_name: str, stage: str = "Production") -> PyFuncModel:
@@ -30,6 +32,7 @@ class ModelService:
             return model
         except Exception as e:
             logger.error(f"Failed to load model | name={model_name} | error={str(e)}")
+            raise
 
     def get_model(self, model_name: str) -> PyFuncModel:
         """Получает загруженную модель"""

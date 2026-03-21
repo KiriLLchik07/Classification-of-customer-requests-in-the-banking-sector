@@ -21,11 +21,12 @@ async def lifespan(app: FastAPI):
 
     logger.info("Start application")
 
-    try:
-        model_service.load_model(settings.model_name)
-        logger.info(f"Model loaded successfully. Model name: {settings.model_name}")
-    except Exception as e:
-        logger.error(f"Failed to load model. Error: {str(e)}")
+    model_service.load_model(settings.model_name, stage=settings.model_stage)
+    logger.info(
+        "Model loaded successfully. Model name: %s | stage=%s",
+        settings.model_name,
+        settings.model_stage,
+    )
 
     yield
 

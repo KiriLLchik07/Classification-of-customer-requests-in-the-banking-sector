@@ -6,11 +6,15 @@ class PredictRequest(BaseModel):
         ...,
         min_length=3,
         max_length=512,
-        description="Текст запроса от клиента"
+        description="The text of the request from the client"
     )
     model_name: str = Field(
         default=settings.model_name,
-        description="Название модели для инференса"
+        description="The name of the model for inference"
+    )
+    model_stage: str = Field(
+        default=settings.model_stage,
+        description="The stage of the model in MLflow Registry"
     )
 
     @field_validator("text")

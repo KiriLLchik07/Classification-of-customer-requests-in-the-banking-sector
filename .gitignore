@@ -1,12 +1,13 @@
 /config/environment.env
 .venv
+backend/.venv
 __pycache__/
 /data
 notebooks/catboost_info
 notebooks/mlflow.db
 notebooks/mlruns
 
-/mlflow_config/mlruns
-/mlflow_config/mlflow.db
-/models
+/mlflow_data
+/artifacts
 /mlruns
+/services/backend/logs

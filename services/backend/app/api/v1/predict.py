@@ -22,7 +22,7 @@ def predict(request: PredictRequest, model_service: ModelService = Depends(get_m
     if not model_service.is_model_loaded(request.model_name):
         try:
             logger.info(f"Model not loaded. Try to load model {request.model_name}")
-            model_service.load_model(request.model_name)
+            model_service.load_model(request.model_name, stage=request.model_stage)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Model '{request.model_name}' not available. Error: {str(e)}")
 
