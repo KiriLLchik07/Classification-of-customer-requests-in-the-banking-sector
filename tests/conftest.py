@@ -1,8 +1,11 @@
+import os
 from pathlib import Path
 import sys
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_ROOT = PROJECT_ROOT / "services" / "backend"
+
+os.environ["DEBUG"] = "false"
 
 for path in (PROJECT_ROOT, BACKEND_ROOT):
     path_str = str(path)

@@ -11,3 +11,7 @@ notebooks/mlruns
 /artifacts
 /mlruns
 /services/backend/logs
+
+.vscode
+.pytest_cache
+/logs

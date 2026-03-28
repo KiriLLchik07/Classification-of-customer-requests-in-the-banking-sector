@@ -3,8 +3,8 @@ from unittest.mock import Mock
 import pytest
 from fastapi.testclient import TestClient
 
-from services.backend.app.main import app
-from services.backend.app.services.model_service import model_service
+from app.main import app
+from app.services.model_service import model_service
 
 @pytest.fixture
 def client(monkeypatch):
