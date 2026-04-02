@@ -73,6 +73,33 @@ def test_predict_loads_missing_model_with_requested_stage(client, monkeypatch):
     assert response.status_code == 200
     assert captured == {"model_name": "CandidateModel", "stage": "Staging"}
 
+def test_predict_returns_400_when_model_load_fails(client, monkeypatch):
+    model_service.models.clear()
+    monkeypatch.setattr(model_service, "load_model", lambda model_name, stage="Production": (_ for _ in ()).throw(RuntimeError("registry unavailable")))
+
+    response = client.post(
+        "/api/v1/predict",
+        json={
+            "text": "My card payment failed",
+            "model_name": "BrokenModel",
+            "model_stage": "Production",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "not available" in response.json()["detail"]
+
+def test_predict_returns_500_when_prediction_fails(client, monkeypatch):
+    monkeypatch.setattr(model_service, "predict", lambda text, model_name: (_ for _ in ()).throw(RuntimeError("inference crashed")))
+
+    response = client.post(
+        "/api/v1/predict",
+        json={"text": "Transfer not received", "model_name": "Banking77_Classifier"},
+    )
+
+    assert response.status_code == 500
+    assert "Prediction_failed" in response.json()["detail"]
+
 def test_health_returns_503_when_no_models_loaded(client):
     model_service.models.clear()
 
@@ -114,3 +141,15 @@ def test_model_info_returns_versions(client, monkeypatch):
             }
         ],
     }
+
+def test_model_info_returns_500_when_registry_request_fails(client, monkeypatch):
+    class DummyClient:
+        def get_latest_versions(self, model_name: str):
+            raise RuntimeError("mlflow unavailable")
+
+    monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
+
+    response = client.get("/api/v1/model_info/Banking77_Classifier")
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "mlflow unavailable"
