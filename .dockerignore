@@ -6,8 +6,8 @@ __pycache__
 data
 notebooks
 mlruns
-models
-reports
+artifacts
+mlflow_data
 
 .venv
 .env

@@ -8,13 +8,13 @@ import json
 from src.data.transformer_dataset import TransformerDataset
 from src.models.transformers.transformer import BankingTransformer
 from src.training.transformers.train_transformer import train_transformer
-from mlflow_config.tracking import setup_mlflow, log_experiment
-from mlflow_config.registry import register_model, set_model_description
-from mlflow_config.logging import log_environment, seed_everything, log_git_commit
-from mlflow_config.dataset import file_md5
+from src.mlops.mlflow.tracking import setup_mlflow, log_experiment
+from src.mlops.mlflow.registry import register_model, set_model_description
+from src.mlops.mlflow.logging import log_environment, seed_everything, log_git_commit
+from src.mlops.mlflow.dataset import file_md5
 from src.evaluation.transformers.evaluate import evaluate_transformer
 
-from src.mlflow_model.log_pyfunc_model import log_pyfunc_model
+from src.mlops.packaging.log_pyfunc_model import log_pyfunc_model
 
 setup_mlflow()
 
@@ -67,7 +67,7 @@ with mlflow.start_run(run_name="DistilBERT") as run:
     mlflow.log_param("val_df_md5", file_md5(DATA_DIR_ROOT / 'val_df.csv'))
     mlflow.log_param("test_df_md5", file_md5(DATA_DIR_ROOT / 'test_df.csv'))
 
-    ARTIFACT_DIR = PROJECT_ROOT / "models/artifacts/saved_model"
+    ARTIFACT_DIR = PROJECT_ROOT / "artifacts" / "local_models" / "transformers"
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
     model_wrapper_distilbert.model.save_pretrained(ARTIFACT_DIR)
     model_wrapper_distilbert.tokenizer.save_pretrained(ARTIFACT_DIR)
@@ -79,10 +79,10 @@ with mlflow.start_run(run_name="DistilBERT") as run:
     with open(LABEL_MAPPING_PATH, "w") as f:
         json.dump(label_mapping, f, ensure_ascii=False, indent=2)
 
-    log_pyfunc_model(model_dir=str(ARTIFACT_DIR), label_mapping_path=str(LABEL_MAPPING_PATH))
+    log_pyfunc_model(model_dir=str(ARTIFACT_DIR), artifact_path="model")
 
     log_experiment(
-        model,
+        model=None,
         metrics={
             "f1_macro_val": best_val_metric,
             "test_f1_macro": test_metrics_distilbert["f1_macro"]
@@ -94,7 +94,7 @@ with mlflow.start_run(run_name="DistilBERT") as run:
         }
     )
 
-    register_model(
+    version = register_model(
         run_id=run.info.run_id,
         artifact_path="model",
         model_name="Banking77_Classifier"
@@ -102,6 +102,6 @@ with mlflow.start_run(run_name="DistilBERT") as run:
     
     set_model_description(
         "Banking77_Classifier",
-        version=8,
+        version=version,
         description="DistilBERT дообученный на датаесете Banking77. Показывает лучшее соотношение качества и скорости. Лучшая модель"
     )

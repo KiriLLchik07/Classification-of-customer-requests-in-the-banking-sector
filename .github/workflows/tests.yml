@@ -1,0 +1,48 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install project dependencies
+        run: poetry install --with dev
+
+      - name: Install backend test dependencies
+        run: |
+          poetry run pip install \
+            fastapi \
+            pydantic \
+            pydantic-settings \
+            prometheus-fastapi-instrumentator \
+            python-json-logger \
+            python-multipart
+
+      - name: Run tests
+        env:
+          DEBUG: "false"
+        run: poetry run pytest tests -v
