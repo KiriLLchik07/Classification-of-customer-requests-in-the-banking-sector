@@ -1,94 +1,96 @@
-import streamlit as st
 from pathlib import Path
-from services.frontend.styles.load_css import load_css, STYLES_PATH
+import streamlit as st
+from styles.load_css import STYLES_PATH, load_css
+
+load_css(Path(STYLES_PATH) / "home_page.css")
 
 st.title("Classification of client’s requests in banking sector", text_alignment="center")
 st.set_page_config(layout="wide")
 
-load_css(Path(STYLES_PATH) / "home_page.css")
+st.markdown(
+    """
+    <br></br>
+    <div class="about-project">
+        This project solves the task of classifying client requests in the banking sector.
+        The system receives request text, predicts its category, and can be used to route
+        the request to the required support scenario.
+        <br><br>
+        The following models are currently used:
+        Logistic Regression, GRU, DistilBERT.
+        <br><br>
+        The system includes:
+        <ul>
+            <li>FastAPI backend service</li>
+            <li>MLflow tracking and model registry</li>
+            <li>Docker Compose based infrastructure</li>
+        </ul>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 st.markdown(
-"""
-<br></br>
-<div class="about_project">
-    This project solve the task of classification client’s requests in banking sector. 
-    The system receives the text of the client's request, determines its category, 
-    and can be used to automatically route the request to the desired support scenario.
-    The following models are used as algorithms for automatically determining the category of goods: Logistic Regression, GRU, DistilBERT.
-    The system is implemented by:
-        <li> The backend of the service, which is made using the FastAPI library, 
-        as well as using the MLflow library for tracking experiments and Mlflow Registry.</li>
-        <li> The entire system is run using the Docker Compose network. </li>
-</div>
-<br></br>
-<div class="summary_info_text">
-    <h4>
+    """
+    <br></br>
+    <div class='section-caption'>
         Summary information about the algorithms used in the system:
-    </h4>
-</div>
-<br></br>
-""",
-unsafe_allow_html=True)
+    </div>
+    <br></br>
+    """,
+    unsafe_allow_html=True,
+)
 
-lr, gru, distil_bert = st.columns(3)
+col_lr, col_gru, col_distilbert = st.columns(3, gap="large")
 
-lr.markdown(
-"""
-<div class="short_info_card">
-    <p style="font-weight: bold">Logistic regression</p>
-    In conjunction with TF-IDF, the Baseline model is presented. 
-    Accuracy of predictions based on the F1-macro metric: 0.866 
-</div>
-""",
-unsafe_allow_html=True)
+col_lr.markdown(
+    """
+    <div class="short-info-card">
+        <p class="card-title">Logistic Regression</p>
+        Baseline model in conjunction with TF-IDF features.
+        F1-macro: 0.866
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-gru.markdown(
-"""
-<div class="short_info_card">
-    <p style="font-weight: bold">GRU</p>
-    The recurrent neural network that handles a text query well as a sequence of tokens. 
-    The accuracy of predictions based on the F1-macro metric is 0.875
-</div>
-""",
-unsafe_allow_html=True)
+col_gru.markdown(
+    """
+    <div class="short-info-card">
+        <p class="card-title">GRU</p>
+        Recurrent neural model that handles sequence patterns in text.
+        F1-macro: 0.875
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-distil_bert.markdown(
-"""
-<div class="short_info_card">
-    <p style="font-weight: bold">DistilBERT</p>
-    The model representing the transformer architecture. 
-    Demonstrates the best accuracy according to the F1-macro metric: 0.924
-</div>
-<br></br>
-""",
-unsafe_allow_html=True)
+col_distilbert.markdown(
+    """
+    <div class="short-info-card">
+        <div class="card-title">DistilBERT</div>
+        Transformer model with the best quality on current experiments.
+        F1-macro: 0.924
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
-more_detail_text, more_detail_buttom = st.columns(2)
+left_1, right_1 = st.columns([4, 1.3])
+left_1.markdown(
+    """
+    <div class='page-text'>
+        More details about models are available on the Models info page.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+if right_1.button("Models info", key="home_models_info_btn", use_container_width=True):
+    st.switch_page("pages/models_info_page.py")
 
-more_detail_text.markdown(
-"""
-<div class="page_text">
-    More detailed information about the algorithms used in the system can be found on the page
-</div>
-<br></br>
-""",
-unsafe_allow_html=True)
-
-more_detail_buttom.button("Models info")
-
-prediction_page_text, prediction_page_buttom = st.columns(2)
-
-prediction_page_text.markdown(
-"""
-<div class="page_text">
-    To determine the type of your request, go to the page
-</div>
-""",
-unsafe_allow_html=True)
-
-prediction_page_buttom.button(
-"""
-<div class="page_bottom">
-    "Prediction"
-</div>
-""")
+left_2, right_2 = st.columns([4, 1.3])
+left_2.markdown(
+    "<div class='page-text'>To classify your own request text, open the Prediction page.</div>",
+    unsafe_allow_html=True,
+)
+if right_2.button("Prediction", key="home_prediction_btn", use_container_width=True):
+    st.switch_page("pages/prediction_page.py")
