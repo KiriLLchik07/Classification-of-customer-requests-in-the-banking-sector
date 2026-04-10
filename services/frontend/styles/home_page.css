@@ -1,0 +1,68 @@
+.stApp {
+  background: linear-gradient(135deg, #abf5ce 29%, #3b63f2 100%);
+}
+
+.about-project {
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-size: 20px;
+  background: rgba(0, 255, 221, 0.2);
+  color: #111;
+}
+
+.section-caption {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.short-info-card {
+  border: 2px solid rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  background: rgba(0, 255, 221, 0.33);
+  font-size: 20px;
+  line-height: 1.35;
+  display: flow-root;
+}
+
+.card-title {
+  margin: 0.2rem 0 0.5rem;
+  font-weight: 700;
+}
+
+.page-text {
+  margin-top: 30px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.loaded-models {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f2240;
+}
+
+div[data-testid="stButton"] > button {
+  border: 2px solid rgba(0, 0, 0, 0.72);
+  background: rgba(0, 255, 221, 0.72);
+  border-radius: 10px;
+  color: #0b1f28;
+  font-size: 1.03rem;
+  font-weight: 650;
+  transition: all 0.18s ease;
+  margin-top: 30px;
+}
+
+div[data-testid="stButton"] > button:hover {
+  border-color: rgba(0, 0, 0, 0.85);
+  background: rgba(0, 255, 221, 0.88);
+  transform: translateY(-1px);
+}
+
+div[data-testid="stButton"] > button:focus {
+  box-shadow: 0 0 0 0.2rem rgba(0, 153, 255, 0.28);
+}

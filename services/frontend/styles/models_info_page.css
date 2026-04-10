@@ -1,0 +1,38 @@
+.stApp {
+  background: linear-gradient(135deg, #abf5ce 0%, #ffffff 100%);
+}
+
+.info-box {
+  border: 2px solid rgba(0, 0, 0, 0.22);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 0.8rem;
+  background: rgba(255, 255, 255, 0.46);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.model-details-box {
+  margin-top: 0.6rem;
+  border: 2px solid rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.52);
+  font-size: 20px;
+  line-height: 1.4;
+  min-height: 180px;
+}
+
+.model-details-title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.24rem;
+  font-weight: 700;
+}
+
+div[role="radiogroup"] {
+  background: rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  padding: 4px 8px 8px;
+  font-size: 20px;
+}
