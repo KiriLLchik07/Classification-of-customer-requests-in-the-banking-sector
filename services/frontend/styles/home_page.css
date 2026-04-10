@@ -2,23 +2,6 @@
   background: linear-gradient(135deg, #abf5ce 29%, #3b63f2 100%);
 }
 
-[data-testid="stHeader"] {
-  background: transparent;
-}
-
-[data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #abf5ce 0%, #81d9f9 100%);
-  border-right: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.page-title {
-  border: 2px solid rgba(0, 0, 0, 0.75);
-  background: rgba(0, 255, 221, 0.7);
-  border-radius: 5px;
-  font-size: 20px;
-  font-weight: 500;
-}
-
 .about-project {
   border: 2px solid rgba(0, 0, 0, 0.25);
   border-radius: 10px;
@@ -53,6 +36,14 @@
   margin-top: 30px;
   font-size: 20px;
   font-weight: 500;
+}
+
+.loaded-models {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f2240;
 }
 
 div[data-testid="stButton"] > button {
