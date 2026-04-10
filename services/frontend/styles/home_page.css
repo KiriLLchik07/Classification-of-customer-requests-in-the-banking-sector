@@ -1,0 +1,57 @@
+.stApp {
+  background: linear-gradient(135deg, #abf5ce 29%, #3b63f2 100%);
+}
+
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #abf5ce 0%, #81d9f9 100%);
+  border-right: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+[data-testid="stHeader"] {
+  background: transparent;
+}
+
+.stButton {
+  text-align: center;
+  border: 2px solid rgba(0, 0, 0, 0.75);
+  background: rgba(0, 255, 221, 0.7);
+  border-radius: 5px;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.about_project {
+  text-align: left;
+  border: 3px solid rgba(0, 0, 0, 0.25);
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 20px;
+  background: rgba(0, 255, 221, 0.2);
+}
+
+.summary_info_text {
+  font-weight: bold;
+}
+
+.short_info_card {
+  text-align: center;
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  background: rgba(0, 255, 221, 0.4);
+  border-radius: 5px;
+  font-size: 20px;
+  height: 150px;
+}
+
+/* .page_bottom {
+  text-align: center;
+  border: 2px solid rgba(0, 0, 0, 0.75);
+  background: rgba(0, 255, 221, 0.7);
+  border-radius: 5px;
+  font-size: 20px;
+  font-weight: 500;
+} */
+
+.page_text {
+  font-size: 20px;
+  font-weight: 500;
+}
