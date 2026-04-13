@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    mlflow_tracking_uri: str = "http://mlflow:5000"
+    mlflow_tracking_uri: str = "http://localhost:5000"
     model_name: str = "Banking77_Classifier"
     model_stage: str = "Production"
     device: str = "cpu"
@@ -38,4 +38,3 @@ def get_settings() -> Settings:
     return Settings()
 
 settings = get_settings()
-# (f"sqlite:///{(BASE_DIR / 'mlflow_data' / 'mlflow.db').as_posix()}")
