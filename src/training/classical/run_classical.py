@@ -1,5 +1,6 @@
 from pathlib import Path
-
+import mlflow
+import mlflow.sklearn
 import pandas as pd
 from catboost import CatBoostClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -8,9 +9,19 @@ from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
 from src.evaluation.classical.evaluate_classical import evaluate_classical
+from src.mlops.mlflow.dataset import file_md5
+from src.mlops.mlflow.logging import log_git_commit, seed_everything
+from src.mlops.mlflow.registry import register_model, set_model_description
+from src.mlops.mlflow.tracking import setup_mlflow
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = PROJECT_ROOT / "data" / "processed"
+
+REGISTERED_BASELINE_NAME = "Banking77_LogisticRegression"
+BASELINE_DESCRIPTION = (
+    "Logistic Regression baseline trained with TF-IDF features "
+    "for Banking77 intent classification."
+)
 
 def build_tfidf() -> TfidfVectorizer:
     return TfidfVectorizer(
@@ -22,11 +33,10 @@ def build_tfidf() -> TfidfVectorizer:
     )
 
 def build_models() -> dict[str, object]:
-    tfidf = build_tfidf()
     return {
         "logistic_regression": Pipeline(
             [
-                ("tfidf", tfidf),
+                ("tfidf", build_tfidf()),
                 ("classifier", LogisticRegression(max_iter=1000, class_weight="balanced")),
             ]
         ),
@@ -45,33 +55,102 @@ def build_models() -> dict[str, object]:
         ),
     }
 
+def log_common_params(train_path: Path, val_path: Path, model_family: str, algorithm: str) -> None:
+    mlflow.log_params(
+        {
+            "model_family": model_family,
+            "algorithm": algorithm,
+            "train_df_md5": file_md5(train_path),
+            "val_df_md5": file_md5(val_path),
+            "python_model_flavor": "sklearn",
+        }
+    )
+    log_git_commit()
 
 def run() -> pd.DataFrame:
-    train_df = pd.read_csv(DATA_DIR / "train_df.csv")
-    val_df = pd.read_csv(DATA_DIR / "val_df.csv")
+    seed_everything(42)
+    setup_mlflow()
 
-    X_train = train_df["text"].tolist()
+    train_path = DATA_DIR / "train_df.csv"
+    val_path = DATA_DIR / "val_df.csv"
+    train_df = pd.read_csv(train_path)
+    val_df = pd.read_csv(val_path)
+
+    x_train = train_df["text"].tolist()
     y_train = train_df["label"].tolist()
-    X_val = val_df["text"].tolist()
+    x_val = val_df["text"].tolist()
     y_val = val_df["label"].tolist()
 
     models = build_models()
     results: dict[str, dict[str, float]] = {}
 
-    models["logistic_regression"].fit(X_train, y_train)
-    results["logistic_regression"] = evaluate_classical(models["logistic_regression"], X_val, y_val)
+    with mlflow.start_run(run_name="Logistic_Regression_Baseline") as run_info:
+        log_common_params(train_path, val_path, model_family="classical", algorithm="logistic_regression")
+        mlflow.log_params(
+            {
+                "tfidf_ngram_range": "(1, 2)",
+                "tfidf_min_df": 2,
+                "tfidf_max_df": 0.9,
+                "tfidf_max_features": 50000,
+                "tfidf_sublinear_tf": True,
+                "classifier_max_iter": 1000,
+                "classifier_class_weight": "balanced",
+            }
+        )
 
-    models["multinomial_nb"].fit(X_train, y_train)
-    results["multinomial_nb"] = evaluate_classical(models["multinomial_nb"], X_val, y_val)
+        models["logistic_regression"].fit(x_train, y_train)
+        results["logistic_regression"] = evaluate_classical(models["logistic_regression"], x_val, y_val)
+        mlflow.log_metrics(results["logistic_regression"])
+        mlflow.sklearn.log_model(models["logistic_regression"], artifact_path="model")
 
-    tfidf = build_tfidf()
-    X_train_tfidf = tfidf.fit_transform(X_train)
-    X_val_tfidf = tfidf.transform(X_val)
-    models["catboost"].fit(X_train_tfidf, y_train)
-    results["catboost"] = evaluate_classical(models["catboost"], X_val_tfidf, y_val)
+        version = register_model(
+            run_id=run_info.info.run_id,
+            artifact_path="model",
+            model_name=REGISTERED_BASELINE_NAME,
+        )
+        set_model_description(
+            model_name=REGISTERED_BASELINE_NAME,
+            version=version,
+            description=BASELINE_DESCRIPTION,
+        )
+
+    with mlflow.start_run(run_name="Multinomial_Naive_Bayes"):
+        log_common_params(train_path, val_path, model_family="classical", algorithm="multinomial_nb")
+        mlflow.log_params(
+            {
+                "tfidf_ngram_range": "(1, 2)",
+                "tfidf_min_df": 2,
+                "tfidf_max_df": 0.9,
+                "tfidf_max_features": 50000,
+                "tfidf_sublinear_tf": True,
+            }
+        )
+
+        models["multinomial_nb"].fit(x_train, y_train)
+        results["multinomial_nb"] = evaluate_classical(models["multinomial_nb"], x_val, y_val)
+        mlflow.log_metrics(results["multinomial_nb"])
+        mlflow.sklearn.log_model(models["multinomial_nb"], artifact_path="model")
+
+    with mlflow.start_run(run_name="CatBoost_Classifier"):
+        log_common_params(train_path, val_path, model_family="classical", algorithm="catboost")
+        mlflow.log_params(
+            {
+                "iterations": 300,
+                "learning_rate": 0.1,
+                "depth": 8,
+                "loss_function": "MultiClass",
+            }
+        )
+
+        tfidf = build_tfidf()
+        x_train_tfidf = tfidf.fit_transform(x_train)
+        x_val_tfidf = tfidf.transform(x_val)
+        models["catboost"].fit(x_train_tfidf, y_train)
+        results["catboost"] = evaluate_classical(models["catboost"], x_val_tfidf, y_val)
+        mlflow.log_metrics(results["catboost"])
+        mlflow.sklearn.log_model(models["catboost"], artifact_path="model")
 
     return pd.DataFrame(results).T.sort_values("f1_macro", ascending=False)
-
 
 if __name__ == "__main__":
     print(run())
