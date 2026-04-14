@@ -11,8 +11,8 @@ def client(monkeypatch):
     original_models = dict(model_service.models)
     model_service.models.clear()
 
-    def fake_startup_load(model_name: str, stage: str = "Production"):
-        model_service.models[model_name] = Mock(name=f"{model_name}:{stage}")
+    def fake_startup_load(model_name: str, alias: str = "production"):
+        model_service.models[model_name] = Mock(name=f"{model_name}:{alias}")
         return model_service.models[model_name]
 
     monkeypatch.setattr("app.main.model_service.load_model", fake_startup_load)
@@ -52,10 +52,10 @@ def test_predict_loads_missing_model_with_requested_stage(client, monkeypatch):
     model_service.models.clear()
     captured = {}
 
-    def fake_load_model(model_name: str, stage: str = "Production"):
+    def fake_load_model(model_name: str, alias: str = "production"):
         captured["model_name"] = model_name
-        captured["stage"] = stage
-        model_service.models[model_name] = Mock(name=f"{model_name}:{stage}")
+        captured["alias"] = alias
+        model_service.models[model_name] = Mock(name=f"{model_name}:{alias}")
         return model_service.models[model_name]
 
     monkeypatch.setattr(model_service, "load_model", fake_load_model)
@@ -66,23 +66,23 @@ def test_predict_loads_missing_model_with_requested_stage(client, monkeypatch):
         json={
             "text": "My balance is not updated",
             "model_name": "CandidateModel",
-            "model_stage": "Staging",
+            "model_alias": "production",
         },
     )
 
     assert response.status_code == 200
-    assert captured == {"model_name": "CandidateModel", "stage": "Staging"}
+    assert captured == {"model_name": "CandidateModel", "alias": "production"}
 
 def test_predict_returns_400_when_model_load_fails(client, monkeypatch):
     model_service.models.clear()
-    monkeypatch.setattr(model_service, "load_model", lambda model_name, stage="Production": (_ for _ in ()).throw(RuntimeError("registry unavailable")))
+    monkeypatch.setattr(model_service, "load_model", lambda model_name, alias="production": (_ for _ in ()).throw(RuntimeError("registry unavailable")))
 
     response = client.post(
         "/api/v1/predict",
         json={
             "text": "My card payment failed",
             "model_name": "BrokenModel",
-            "model_stage": "Production",
+            "model_alias": "production",
         },
     )
 
@@ -120,7 +120,7 @@ def test_model_info_returns_404_when_registry_has_no_versions(client, monkeypatc
     assert response.status_code == 404
 
 def test_model_info_returns_versions(client, monkeypatch):
-    version = Mock(version="12", current_stage="Production", description="best model")
+    version = Mock(version="12", current_alias="production", description="best model")
 
     class DummyClient:
         def get_latest_versions(self, model_name: str):
@@ -136,7 +136,7 @@ def test_model_info_returns_versions(client, monkeypatch):
         "versions": [
             {
                 "version": "12",
-                "stage": "Production",
+                "alias": "production",
                 "description": "best model",
             }
         ],

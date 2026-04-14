@@ -45,9 +45,9 @@ with left_col:
         key="model_select",
         label_visibility="collapsed",
     )
-    selected_stage = st.selectbox(
-        "Model stage",
-        ["Production", "Staging"],
+    selected_alias = st.selectbox(
+        "Model alias",
+        ["production", "reserve", "baseline"],
         index=0,
         key="model_stage_select",
         label_visibility="collapsed",
@@ -76,7 +76,7 @@ if predict_clicked:
             backend_url=backend_url,
             text=clean_text,
             model_name=selected_model,
-            model_stage=selected_stage,
+            model_alias=selected_alias,
         )
         elapsed_ms = (time.perf_counter() - start) * 1000
 

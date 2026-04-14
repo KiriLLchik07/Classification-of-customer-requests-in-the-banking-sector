@@ -7,7 +7,7 @@ def test_predict_request_uses_default_model_settings():
     request = PredictRequest(text="check card delivery")
 
     assert request.model_name == "Banking77_Classifier"
-    assert request.model_stage == "Production"
+    assert request.model_alias == "candidate"
 
 def test_predict_request_strips_whitespace():
     request = PredictRequest(text="card not working")

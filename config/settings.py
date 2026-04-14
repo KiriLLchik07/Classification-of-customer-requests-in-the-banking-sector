@@ -11,7 +11,7 @@ class Settings(BaseSettings):
 
     mlflow_tracking_uri: str = "http://localhost:5000"
     model_name: str = "Banking77_Classifier"
-    model_stage: str = "Production"
+    model_alias: str = "production"
     device: str = "cpu"
 
     redis_host: str = "redis"

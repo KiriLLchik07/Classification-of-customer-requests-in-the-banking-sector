@@ -22,7 +22,7 @@ def model_info(model_name: str):
         for v in versions:
             result.append({
                 "version": v.version,
-                "stage": v.current_stage,
+                "alias": v.current_alias,
                 "description": v.description
             })
 

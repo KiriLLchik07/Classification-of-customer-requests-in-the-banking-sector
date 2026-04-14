@@ -14,16 +14,16 @@ class ModelService:
         mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
         self.models: dict[str, PyFuncModel] = {}
 
-    def load_model(self, model_name: str, stage: str = "Production") -> PyFuncModel:
+    def load_model(self, model_name: str, alias: str = "production") -> PyFuncModel:
         """
         Загружает модель из MLflow Model Registry.
         Args:
             model_name: Имя модель в MLflow реестре.
-            stage: Стадия модели.
+            alias: Состояние модели.
         """
-        model_uri = f"models:/{model_name}/{stage}"
+        model_uri = f"models:/{model_name}@{alias}"
 
-        logger.info(f"Loading model {model_name} | stage={stage} | from {model_uri}")
+        logger.info(f"Loading model {model_name} | alias={alias} | from {model_uri}")
 
         try:
             model = mlflow.pyfunc.load_model(model_uri)

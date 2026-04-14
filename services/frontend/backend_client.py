@@ -77,7 +77,7 @@ def predict_request(
     backend_url: str,
     text: str,
     model_name: str,
-    model_stage: str = "Production",
+    model_alias: str = "production",
 ) -> dict[str, Any]:
     status_code, payload, transport_error = _request_json(
         backend_url=backend_url,
@@ -86,7 +86,7 @@ def predict_request(
         payload={
             "text": text,
             "model_name": model_name,
-            "model_stage": model_stage,
+            "model_alias": model_alias,
         },
     )
     if transport_error:

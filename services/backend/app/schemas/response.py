@@ -29,5 +29,5 @@ class ModelInfoResponce(BaseModel):
     """Схема ответа для эндпоинта /model_info"""
     model_name: str
     version: str
-    stage: str
+    alias: str
     description: Optional[str] = None

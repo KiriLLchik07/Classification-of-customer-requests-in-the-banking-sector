@@ -16,11 +16,11 @@ def test_load_model_uses_mlflow_registry_uri(monkeypatch):
 
     monkeypatch.setattr("app.services.model_service.mlflow.pyfunc.load_model", fake_load_model)
 
-    result = service.load_model("Banking77_Classifier", stage="Staging")
+    result = service.load_model("Banking77_LogisticRegression", alias="baseline")
 
     assert result is fake_model
-    assert captured["model_uri"] == "models:/Banking77_Classifier/Staging"
-    assert service.get_model("Banking77_Classifier") is fake_model
+    assert captured["model_uri"] == "models:/Banking77_LogisticRegression@baseline"
+    assert service.get_model("Banking77_LogisticRegression") is fake_model
 
 def test_load_model_reraises_mlflow_errors(monkeypatch):
     service = ModelService()

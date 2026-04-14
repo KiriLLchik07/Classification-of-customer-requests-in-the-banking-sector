@@ -5,7 +5,6 @@ from app.api.v1.predict import router as predict_router
 from app.api.v1.models import router as models_router
 from app.api.v1.health import router as health_router
 from app.api.v1.model_info import router as model_info_router
-
 from app.services.model_service import model_service
 from app.core.logger import setup_logging
 from config.settings import settings
@@ -21,11 +20,11 @@ async def lifespan(app: FastAPI):
 
     logger.info("Start application")
 
-    model_service.load_model(settings.model_name, stage=settings.model_stage)
+    model_service.load_model(settings.model_name, alias=settings.model_alias)
     logger.info(
-        "Model loaded successfully. Model name: %s | stage=%s",
+        "Model loaded successfully. Model name: %s | alias=%s",
         settings.model_name,
-        settings.model_stage,
+        settings.model_alias,
     )
 
     yield
