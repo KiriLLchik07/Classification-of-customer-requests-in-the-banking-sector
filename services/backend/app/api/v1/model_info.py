@@ -13,25 +13,27 @@ def model_info(model_name: str):
     """
     try:
         client = mlflow.tracking.MlflowClient(tracking_uri=settings.mlflow_tracking_uri)
-        versions = client.get_latest_versions(model_name)
-
-        if not versions:
-            raise HTTPException(status_code=404, detail=f"Model {model_name} not founded in registry")
-
-        result = []
-        for v in versions:
-            result.append({
-                "version": v.version,
-                "alias": v.current_alias,
-                "description": v.description
-            })
+        requested_alias = "production"
+        version = client.get_model_version_by_alias(name=model_name, alias=requested_alias)
 
         return {
             "model_name": model_name,
-            "versions": result
+            "versions": [
+                {
+                    "version": version.version,
+                    "alias": requested_alias,
+                    "aliases": list(getattr(version, "aliases", []) or [requested_alias]),
+                    "description": version.description,
+                }
+            ],
         }
     except HTTPException:
         raise
     except Exception as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Model '{model_name}' with alias 'production' not found in registry",
+            )
         logger.error(f"Failed to get model info. Model={model_name}, error={str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

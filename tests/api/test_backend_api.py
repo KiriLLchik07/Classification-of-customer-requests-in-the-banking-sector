@@ -110,8 +110,8 @@ def test_health_returns_503_when_no_models_loaded(client):
 
 def test_model_info_returns_404_when_registry_has_no_versions(client, monkeypatch):
     class DummyClient:
-        def get_latest_versions(self, model_name: str):
-            return []
+        def get_model_version_by_alias(self, name: str, alias: str):
+            raise RuntimeError("model version not found")
 
     monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
 
@@ -120,11 +120,11 @@ def test_model_info_returns_404_when_registry_has_no_versions(client, monkeypatc
     assert response.status_code == 404
 
 def test_model_info_returns_versions(client, monkeypatch):
-    version = Mock(version="12", current_alias="production", description="best model")
+    version = Mock(version="12", aliases=["production"], description="best model")
 
     class DummyClient:
-        def get_latest_versions(self, model_name: str):
-            return [version]
+        def get_model_version_by_alias(self, name: str, alias: str):
+            return version
 
     monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
 
@@ -137,6 +137,7 @@ def test_model_info_returns_versions(client, monkeypatch):
             {
                 "version": "12",
                 "alias": "production",
+                "aliases": ["production"],
                 "description": "best model",
             }
         ],
@@ -144,7 +145,7 @@ def test_model_info_returns_versions(client, monkeypatch):
 
 def test_model_info_returns_500_when_registry_request_fails(client, monkeypatch):
     class DummyClient:
-        def get_latest_versions(self, model_name: str):
+        def get_model_version_by_alias(self, name: str, alias: str):
             raise RuntimeError("mlflow unavailable")
 
     monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
