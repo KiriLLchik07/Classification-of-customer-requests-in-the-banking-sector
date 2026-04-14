@@ -1,8 +1,8 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException
-from ...schemas.request import PredictRequest
-from ...schemas.response import PredictResponse
-from ...services.model_service import ModelService, get_model_service
+from services.backend.app.schemas.request import PredictRequest
+from services.backend.app.schemas.response import PredictResponse
+from services.backend.app.services.model_service import ModelService, get_model_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
