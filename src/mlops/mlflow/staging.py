@@ -41,5 +41,3 @@ if __name__ == "__main__":
     set_model_stages_and_aliases(REGISTERED_MODEL_NAME_GRU, {1: ["candidate"]})
     set_model_stages_and_aliases(REGISTERED_MODEL_NAME_BERT, {1: ["candidate"]})
     set_model_stages_and_aliases(REGISTERED_MODEL_NAME_DISTILBERT, {1: ["champion"]})
-
-
