@@ -37,7 +37,7 @@ if __name__ == "__main__":
     REGISTERED_MODEL_NAME_DISTILBERT = "Banking77_DistilBERT"
     
     set_model_stages_and_aliases(REGISTERED_BASELINE_NAME, {1: ["baseline"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_LSTM, {1: ["candidate"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_GRU, {1: ["candidate"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_BERT, {1: ["candidate"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_DISTILBERT, {1: ["champion"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_LSTM, {1: ["reserve"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_GRU, {1: ["reserve"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_BERT, {1: ["production"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_DISTILBERT, {1: ["production"]})

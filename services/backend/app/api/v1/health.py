@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 import logging
-from app.schemas.response import HealthResponce
-from app.services.model_service import ModelService, get_model_service
+from ...schemas.response import HealthResponce
+from ...services.model_service import ModelService, get_model_service
 from config.settings import settings
 
 logger = logging.getLogger(__name__)

@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.api.v1.predict import router as predict_router
-from app.api.v1.models import router as models_router
-from app.api.v1.health import router as health_router
-from app.api.v1.model_info import router as model_info_router
-from app.services.model_service import model_service
-from app.core.logger import setup_logging
+from .api.v1.predict import router as predict_router
+from .api.v1.models import router as models_router
+from .api.v1.health import router as health_router
+from .api.v1.model_info import router as model_info_router
+from .services.model_service import model_service
+from .core.logger import setup_logging
 from config.settings import settings
 from prometheus_fastapi_instrumentator import PrometheusFastApiInstrumentator
 

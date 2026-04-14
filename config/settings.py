@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     port: int = 8000
 
     mlflow_tracking_uri: str = "http://localhost:5000"
-    model_name: str = "Banking77_Classifier"
+    model_name: str = "Banking77_DistilBERT"
     model_alias: str = "production"
     device: str = "cpu"
 
