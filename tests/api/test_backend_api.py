@@ -1,10 +1,9 @@
 from unittest.mock import Mock
-
 import pytest
 from fastapi.testclient import TestClient
-
-from app.main import app
-from app.services.model_service import model_service
+from config.settings import settings
+from services.backend.app.main import app
+from services.backend.app.services.model_service import model_service
 
 @pytest.fixture
 def client(monkeypatch):
@@ -15,7 +14,7 @@ def client(monkeypatch):
         model_service.models[model_name] = Mock(name=f"{model_name}:{alias}")
         return model_service.models[model_name]
 
-    monkeypatch.setattr("app.main.model_service.load_model", fake_startup_load)
+    monkeypatch.setattr("services.backend.app.main.model_service.load_model", fake_startup_load)
 
     with TestClient(app) as test_client:
         yield test_client
@@ -29,20 +28,20 @@ def test_health_returns_ok_when_model_loaded_on_startup(client):
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "ok"
-    assert body["models_loaded"] == ["Banking77_Classifier"]
+    assert body["models_loaded"] == [settings.model_name]
 
 def test_models_endpoint_returns_loaded_models(client):
     response = client.get("/api/v1/models")
 
     assert response.status_code == 200
-    assert response.json() == {"models": ["Banking77_Classifier"]}
+    assert response.json() == {"models": [settings.model_name]}
 
 def test_predict_uses_loaded_model_and_returns_prediction(client, monkeypatch):
     monkeypatch.setattr(model_service, "predict", lambda text, model_name: "cash_withdrawal")
 
     response = client.post(
         "/api/v1/predict",
-        json={"text": "Where is my cash withdrawal?", "model_name": "Banking77_Classifier"},
+        json={"text": "Where is my cash withdrawal?", "model_name": settings.model_name},
     )
 
     assert response.status_code == 200
@@ -94,7 +93,7 @@ def test_predict_returns_500_when_prediction_fails(client, monkeypatch):
 
     response = client.post(
         "/api/v1/predict",
-        json={"text": "Transfer not received", "model_name": "Banking77_Classifier"},
+        json={"text": "Transfer not received", "model_name": settings.model_name},
     )
 
     assert response.status_code == 500
@@ -113,7 +112,10 @@ def test_model_info_returns_404_when_registry_has_no_versions(client, monkeypatc
         def get_model_version_by_alias(self, name: str, alias: str):
             raise RuntimeError("model version not found")
 
-    monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
+    monkeypatch.setattr(
+        "services.backend.app.api.v1.model_info.mlflow.tracking.MlflowClient",
+        lambda tracking_uri=None: DummyClient(),
+    )
 
     response = client.get("/api/v1/model_info/UnknownModel")
 
@@ -126,13 +128,16 @@ def test_model_info_returns_versions(client, monkeypatch):
         def get_model_version_by_alias(self, name: str, alias: str):
             return version
 
-    monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
+    monkeypatch.setattr(
+        "services.backend.app.api.v1.model_info.mlflow.tracking.MlflowClient",
+        lambda tracking_uri=None: DummyClient(),
+    )
 
-    response = client.get("/api/v1/model_info/Banking77_Classifier")
+    response = client.get(f"/api/v1/model_info/{settings.model_name}")
 
     assert response.status_code == 200
     assert response.json() == {
-        "model_name": "Banking77_Classifier",
+        "model_name": settings.model_name,
         "versions": [
             {
                 "version": "12",
@@ -148,9 +153,12 @@ def test_model_info_returns_500_when_registry_request_fails(client, monkeypatch)
         def get_model_version_by_alias(self, name: str, alias: str):
             raise RuntimeError("mlflow unavailable")
 
-    monkeypatch.setattr("app.api.v1.model_info.mlflow.tracking.MlflowClient", lambda tracking_uri=None: DummyClient())
+    monkeypatch.setattr(
+        "services.backend.app.api.v1.model_info.mlflow.tracking.MlflowClient",
+        lambda tracking_uri=None: DummyClient(),
+    )
 
-    response = client.get("/api/v1/model_info/Banking77_Classifier")
+    response = client.get(f"/api/v1/model_info/{settings.model_name}")
 
     assert response.status_code == 500
     assert response.json()["detail"] == "mlflow unavailable"

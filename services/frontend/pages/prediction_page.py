@@ -1,16 +1,21 @@
 from pathlib import Path
 import time
 import streamlit as st
-from backend_client import DEFAULT_BACKEND_URL, get_models, predict_request
+from backend_client import DEFAULT_BACKEND_URL, get_models, predict_request, get_mlflow_models
 from styles.load_css import STYLES_PATH, load_css
 
 load_css(Path(STYLES_PATH) / "prediction_page.css")
 
 backend_url = st.session_state.get("backend_url", DEFAULT_BACKEND_URL)
-models_result = get_models(backend_url)
+loaded_models = get_models(backend_url)
+mlflow_models = get_mlflow_models(backend_url)
 
 fallback_models = ["DistilBERT", "GRU", "Logistic Regression"]
-model_names = models_result["models"] if models_result["ok"] and models_result["models"] else fallback_models
+loaded_model_names = loaded_models["models"] if loaded_models["ok"] and loaded_models["models"] else fallback_models
+registry_model_names = (
+    mlflow_models["model_names"] if mlflow_models["ok"] and mlflow_models["model_names"] else []
+)
+other_registry_models = [name for name in registry_model_names if name not in loaded_model_names]
 
 st.title("Prediction section", text_alignment="center")
 
@@ -25,12 +30,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-if not models_result["ok"]:
-    st.warning(f"Could not load models from backend: {models_result['error']}")
+if not loaded_models["ok"]:
+    st.warning(f"Could not load models from backend: {loaded_models['error']}")
+if not mlflow_models["ok"]:
+    st.warning(f"Could not load model list from MLflow Registry: {mlflow_models['error']}")
 
 request_text = st.text_area(
     "Request text",
-    value="I need to issue a debit card. How can I do this?",
     label_visibility="collapsed",
     key="request_text",
 )
@@ -38,26 +44,35 @@ request_text = st.text_area(
 left_col, right_col = st.columns([1, 1.4], gap="large")
 
 with left_col:
-    selected_model = st.selectbox(
-        "Model",
-        model_names,
+    selected_loaded_model = st.selectbox(
+        "Loaded model",
+        loaded_model_names,
         index=0,
-        key="model_select",
+        key="loaded_model_select",
+        label_visibility="collapsed",
+    )
+    selected_registry_model = st.selectbox(
+        "Other models from MLflow Registry",
+        ["Not selected"] + other_registry_models,
+        index=0,
+        key="registry_model_select",
         label_visibility="collapsed",
     )
     selected_alias = st.selectbox(
         "Model alias",
         ["production", "reserve", "baseline"],
         index=0,
-        key="model_stage_select",
+        key="model_alias_select",
         label_visibility="collapsed",
     )
+
+effective_model = selected_registry_model if selected_registry_model != "Not selected" else selected_loaded_model
 
 with right_col:
     st.markdown(
         f"""
         <div class="hint-box">
-            <span class="hint-model">{selected_model}</span> is currently selected for prediction.
+            <span class="hint-model">{effective_model}</span> is currently selected for prediction.
             More details about every model are available on the <b>Models info</b> page.
         </div>
         """,
@@ -75,7 +90,7 @@ if predict_clicked:
         prediction_result = predict_request(
             backend_url=backend_url,
             text=clean_text,
-            model_name=selected_model,
+            model_name=effective_model,
             model_alias=selected_alias,
         )
         elapsed_ms = (time.perf_counter() - start) * 1000

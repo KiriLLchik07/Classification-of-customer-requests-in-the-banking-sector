@@ -120,3 +120,16 @@ def get_model_info(backend_url: str, model_name: str) -> dict[str, Any]:
         "error": (payload or {}).get("detail", f"HTTP {status_code}"),
         "versions": [],
     }
+
+def get_mlflow_models(backend_url: str) -> dict[str, Any]:
+    status_code, payload, transport_error = _request_json(
+        backend_url=backend_url,
+        method="GET",
+        path=f"{API_PREFIX}/mlflow_models",
+    )
+    if transport_error:
+        return {"ok": False, "model_names": [], "error": transport_error}
+    if status_code == 200:
+        model_names = (payload or {}).get("model_names", [])
+        return {"ok": True, "model_names": model_names}
+    return {"ok": False, "model_names": [], "error": (payload or {}).get("detail", f"HTTP {status_code}")}

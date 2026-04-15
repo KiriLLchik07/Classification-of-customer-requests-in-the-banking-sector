@@ -1,12 +1,13 @@
 from fastapi import APIRouter, HTTPException
 import mlflow
 import logging
+from services.backend.app.schemas.response import ModelInfoResponse, ModelInfoVersion
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.get("/model_info/{model_name}")
+@router.get("/model_info/{model_name}", response_model=ModelInfoResponse)
 def model_info(model_name: str):
     """
     Возвращает информацию о модели из MLflow Registry
@@ -16,17 +17,18 @@ def model_info(model_name: str):
         requested_alias = "production"
         version = client.get_model_version_by_alias(name=model_name, alias=requested_alias)
 
-        return {
-            "model_name": model_name,
-            "versions": [
-                {
-                    "version": version.version,
-                    "alias": requested_alias,
-                    "aliases": list(getattr(version, "aliases", []) or [requested_alias]),
-                    "description": version.description,
-                }
+        aliases = list(getattr(version, "aliases", []) or [requested_alias])
+        return ModelInfoResponse(
+            model_name=model_name,
+            versions=[
+                ModelInfoVersion(
+                    version=str(version.version),
+                    alias=requested_alias,
+                    aliases=aliases,
+                    description=version.description,
+                )
             ],
-        }
+        )
     except HTTPException:
         raise
     except Exception as e:
