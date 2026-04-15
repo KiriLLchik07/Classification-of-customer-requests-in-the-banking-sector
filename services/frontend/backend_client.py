@@ -100,12 +100,12 @@ def predict_request(
         }
     return {"ok": False, "error": (payload or {}).get("detail", f"HTTP {status_code}")}
 
-def get_model_info(backend_url: str, model_name: str) -> dict[str, Any]:
+def get_model_info(backend_url: str, model_name: str, alias: str = "production") -> dict[str, Any]:
     safe_name = quote(model_name, safe="")
     status_code, payload, transport_error = _request_json(
         backend_url=backend_url,
         method="GET",
-        path=f"{API_PREFIX}/model_info/{safe_name}",
+        path=f"{API_PREFIX}/model_info/{safe_name}?alias={quote(alias, safe='')}",
     )
     if transport_error:
         return {"ok": False, "error": transport_error, "versions": []}

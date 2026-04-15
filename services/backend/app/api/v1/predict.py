@@ -19,9 +19,21 @@ def predict(request: PredictRequest, model_service: ModelService = Depends(get_m
     """
     logger.info(f"Request received | model={request.model_name}")
 
-    if not model_service.is_model_loaded(request.model_name):
+    loaded_alias = model_service.get_loaded_alias(request.model_name)
+    model_needs_loading = (
+        (not model_service.is_model_loaded(request.model_name))
+        or (loaded_alias is not None and loaded_alias != request.model_alias)
+        or (loaded_alias is None)
+    )
+
+    if model_needs_loading:
         try:
-            logger.info(f"Model not loaded. Try to load model {request.model_name}")
+            logger.info(
+                "Model load required. model=%s | requested_alias=%s | loaded_alias=%s",
+                request.model_name,
+                request.model_alias,
+                loaded_alias,
+            )
             model_service.load_model(request.model_name, alias=request.model_alias)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Model '{request.model_name}' not available. Error: {str(e)}")

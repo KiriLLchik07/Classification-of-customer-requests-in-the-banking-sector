@@ -13,6 +13,7 @@ class ModelService:
     def __init__(self):
         mlflow.set_tracking_uri(settings.mlflow_tracking_uri)
         self.models: dict[str, PyFuncModel] = {}
+        self.model_aliases: dict[str, str] = {}
 
     def load_model(self, model_name: str, alias: str = "production") -> PyFuncModel:
         """
@@ -28,6 +29,7 @@ class ModelService:
         try:
             model = mlflow.pyfunc.load_model(model_uri)
             self.models[model_name] = model
+            self.model_aliases[model_name] = alias
             logger.info(f"Model {model_name} loaded successfully")
             return model
         except Exception as e:
@@ -59,8 +61,7 @@ class ModelService:
         logger.info(
             f"Prediction made | model={model_name} | text={text[:30]} | pred={prediction}"
         )
-
-        return str(prediction)
+        return prediction
 
     def list_models(self) -> list[str]:
         """Возвращает список загруженных моделей."""
@@ -69,6 +70,9 @@ class ModelService:
     def is_model_loaded(self, model_name: str) -> bool:
         """Проверяет, загружена ли модель."""
         return model_name in self.models
+
+    def get_loaded_alias(self, model_name: str) -> str | None:
+        return self.model_aliases.get(model_name)
 
 model_service = ModelService()
 

@@ -14,13 +14,14 @@ def test_load_model_uses_mlflow_registry_uri(monkeypatch):
         captured["model_uri"] = model_uri
         return fake_model
 
-    monkeypatch.setattr("app.services.model_service.mlflow.pyfunc.load_model", fake_load_model)
+    monkeypatch.setattr("services.backend.app.services.model_service.mlflow.pyfunc.load_model", fake_load_model)
 
     result = service.load_model("Banking77_LogisticRegression", alias="baseline")
 
     assert result is fake_model
     assert captured["model_uri"] == "models:/Banking77_LogisticRegression@baseline"
     assert service.get_model("Banking77_LogisticRegression") is fake_model
+    assert service.get_loaded_alias("Banking77_LogisticRegression") == "baseline"
 
 def test_load_model_reraises_mlflow_errors(monkeypatch):
     service = ModelService()
@@ -28,7 +29,7 @@ def test_load_model_reraises_mlflow_errors(monkeypatch):
     def fake_load_model(model_uri: str):
         raise RuntimeError("registry unavailable")
 
-    monkeypatch.setattr("app.services.model_service.mlflow.pyfunc.load_model", fake_load_model)
+    monkeypatch.setattr("services.backend.app.services.model_service.mlflow.pyfunc.load_model", fake_load_model)
 
     with pytest.raises(RuntimeError, match="registry unavailable"):
         service.load_model("Banking77_Classifier")
