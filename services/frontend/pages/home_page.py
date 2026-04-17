@@ -29,8 +29,6 @@ st.markdown(
             <li>MLflow tracking and model registry</li>
             <li>Docker Compose based infrastructure</li>
         </ul>
-        <b>Backend:</b> {backend_url}<br>
-        <b>Health:</b> {"ok" if health_result["ok"] else "unavailable"}
     </div>
     """,
     unsafe_allow_html=True,
