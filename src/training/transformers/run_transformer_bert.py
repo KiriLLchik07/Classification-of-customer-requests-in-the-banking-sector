@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from torch.utils.data import DataLoader
 import mlflow
+import json
 
 from src.data.transformer_dataset import TransformerDataset
 from src.models.transformers.transformer import BankingTransformer
@@ -12,12 +13,23 @@ from src.mlops.mlflow.registry import register_model, set_model_description
 from src.mlops.mlflow.logging import log_environment, seed_everything, log_git_commit
 from src.mlops.mlflow.dataset import file_md5
 from src.evaluation.transformers.evaluate import evaluate_transformer
+from src.mlops.packaging.log_pyfunc_model import log_pyfunc_model, TransformerPyFunc
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR_ROOT = PROJECT_ROOT / "data/processed"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 BERT_MODEL = "bert-base-uncased"
 REGISTERED_MODEL_NAME_BERT = "Banking77_BERT"
+
+def build_label_mapping(train_df: pd.DataFrame) -> dict[int, str]:
+    if "label_name" in train_df.columns:
+        deduplicated = train_df[["label", "label_name"]].drop_duplicates(subset=["label"])
+        return {
+            int(row["label"]): str(row["label_name"])
+            for _, row in deduplicated.iterrows()
+        }
+    labels = sorted(train_df["label"].unique().tolist())
+    return {int(label): str(label) for label in labels}
 
 def run() -> None:    
     setup_mlflow()
@@ -62,8 +74,24 @@ def run() -> None:
         mlflow.log_param("val_df_md5", file_md5(DATA_DIR_ROOT / 'val_df.csv'))
         mlflow.log_param("test_df_md5", file_md5(DATA_DIR_ROOT / 'test_df.csv'))
 
+        artifact_dir = PROJECT_ROOT / "artifacts" / "local_models" / "transformers" / "bert"
+        artifact_dir.mkdir(parents=True, exist_ok=True)
+        model_wrapper_bert.model.save_pretrained(artifact_dir)
+        model_wrapper_bert.tokenizer.save_pretrained(artifact_dir)
+
+        label_mapping = build_label_mapping(train_df)
+        with open(artifact_dir / "label_mapping.json", "w", encoding="utf-8") as f:
+            json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+
+        log_pyfunc_model(
+            model_dir=str(artifact_dir),
+            python_model=TransformerPyFunc(),
+            artifact_path="model",
+            pip_requirements=["mlflow", "pandas", "torch", "transformers"],
+        )
+
         log_experiment(
-            model,
+            model=None,
             metrics={
                 "f1_macro_val": best_val_metric,
                 "test_f1_macro": test_metrics_bert["f1_macro"]

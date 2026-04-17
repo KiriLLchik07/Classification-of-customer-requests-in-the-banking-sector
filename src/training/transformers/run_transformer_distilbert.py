@@ -13,13 +13,17 @@ from src.mlops.mlflow.registry import register_model, set_model_description
 from src.mlops.mlflow.logging import log_environment, seed_everything, log_git_commit
 from src.mlops.mlflow.dataset import file_md5
 from src.evaluation.transformers.evaluate import evaluate_transformer
-from src.mlops.packaging.log_pyfunc_model import log_pyfunc_model
+from src.mlops.packaging.log_pyfunc_model import log_pyfunc_model, TransformerPyFunc
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR_ROOT = PROJECT_ROOT / "data/processed"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 DISTILBERT_MODEL = "distilbert-base-uncased"
 REGISTERED_MODEL_NAME_DISTILBERT = "Banking77_DistilBERT"
+
+def build_label_mapping(train_df: pd.DataFrame) -> dict[int, str]:
+    labels = sorted(train_df["label"].unique().tolist())
+    return {int(label): str(label) for label in labels}
 
 def run() -> None:
     setup_mlflow()
@@ -66,19 +70,24 @@ def run() -> None:
         mlflow.log_param("val_df_md5", file_md5(DATA_DIR_ROOT / 'val_df.csv'))
         mlflow.log_param("test_df_md5", file_md5(DATA_DIR_ROOT / 'test_df.csv'))
 
-        ARTIFACT_DIR = PROJECT_ROOT / "artifacts" / "local_models" / "transformers"
+        ARTIFACT_DIR = PROJECT_ROOT / "artifacts" / "local_models" / "transformers" / "distilbert"
         ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
         model_wrapper_distilbert.model.save_pretrained(ARTIFACT_DIR)
         model_wrapper_distilbert.tokenizer.save_pretrained(ARTIFACT_DIR)
 
-        label_mapping = {i: label for i, label in enumerate(sorted(set(y_train)))}
+        label_mapping = build_label_mapping(train_df)
 
         LABEL_MAPPING_PATH = ARTIFACT_DIR / "label_mapping.json"
 
-        with open(LABEL_MAPPING_PATH, "w") as f:
+        with open(LABEL_MAPPING_PATH, "w", encoding="utf-8") as f:
             json.dump(label_mapping, f, ensure_ascii=False, indent=2)
 
-        log_pyfunc_model(model_dir=str(ARTIFACT_DIR), artifact_path="model")
+        log_pyfunc_model(
+            model_dir=str(ARTIFACT_DIR),
+            python_model=TransformerPyFunc(),
+            artifact_path="model",
+            pip_requirements=["mlflow", "pandas", "torch", "transformers"],
+        )
 
         log_experiment(
             model=None,

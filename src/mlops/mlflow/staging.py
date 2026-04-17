@@ -36,8 +36,8 @@ if __name__ == "__main__":
     REGISTERED_MODEL_NAME_BERT = "Banking77_BERT"
     REGISTERED_MODEL_NAME_DISTILBERT = "Banking77_DistilBERT"
     
-    set_model_stages_and_aliases(REGISTERED_BASELINE_NAME, {1: ["baseline"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_LSTM, {1: ["reserve"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_GRU, {1: ["reserve"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_BERT, {1: ["production"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_DISTILBERT, {1: ["production"]})
+    set_model_stages_and_aliases(REGISTERED_BASELINE_NAME, {2: ["baseline"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_LSTM, {2: ["reserve"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_GRU, {2: ["reserve"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_BERT, {2: ["production"]})
+    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_DISTILBERT, {2: ["production"]})

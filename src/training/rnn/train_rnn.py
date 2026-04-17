@@ -12,6 +12,7 @@ from src.features.tokenizer import TextTokenizer
 from src.mlops.mlflow.logging import log_git_commit, seed_everything
 from src.mlops.mlflow.registry import register_model, set_model_description
 from src.mlops.mlflow.tracking import log_experiment, setup_mlflow
+from src.mlops.packaging.log_pyfunc_model import RNNPyFunc, log_pyfunc_model
 from src.models.rnn.lstm_gru import RNNClassifier
 from src.training.rnn.train_one_epoch import train_one_epoch
 
@@ -50,22 +51,43 @@ def train_eval_rnn_model(model, train_dataloader, val_dataloader, test_dataloade
         last_test_metrics = evaluate(model, test_dataloader, device)
     return last_test_metrics
 
-def save_model(model, tokenizer, path: Path, model_name: str) -> Path:
-    output_path = path / f"rnn_classifier_{model_name}.pt"
+def build_label_mapping(train_df: pd.DataFrame) -> dict[int, str]:
+    labels = sorted(train_df["label"].unique().tolist())
+    return {int(label): str(label) for label in labels}
+
+def save_rnn_artifacts(
+    model: RNNClassifier,
+    tokenizer: TextTokenizer,
+    model_name: str,
+    rnn_type: str,
+    num_classes: int,
+    label_mapping: dict[int, str],
+) -> Path:
+    artifact_dir = MODEL_SAVE_ROOT / model_name
+    artifact_dir.mkdir(parents=True, exist_ok=True)
+
     torch.save(
         {
             "model_state_dict": model.state_dict(),
             "vocab": tokenizer.word2idx,
         },
-        output_path,
+        artifact_dir / "checkpoint.pt",
     )
-    return output_path
 
-def save_vocab(path: Path, tokenizer: TextTokenizer) -> Path:
-    vocab_path = path / "vocab_rnn.json"
-    with open(vocab_path, "w", encoding="utf-8") as f:
-        json.dump(tokenizer.word2idx, f, ensure_ascii=False, indent=2)
-    return vocab_path
+    config = {
+        "embedding_dim": EMBEDDING_DIM,
+        "hidden_dim": HIDDEN_DIM,
+        "num_classes": num_classes,
+        "rnn_type": rnn_type,
+        "max_len": MAX_LEN,
+    }
+    with open(artifact_dir / "config.json", "w", encoding="utf-8") as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+
+    with open(artifact_dir / "label_mapping.json", "w", encoding="utf-8") as f:
+        json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+
+    return artifact_dir
 
 def run() -> None:
     seed_everything(42)
@@ -81,10 +103,11 @@ def run() -> None:
     y_val = val_df["label"].tolist()
     X_test = test_df["text"].tolist()
     y_test = test_df["label"].tolist()
+    label_mapping = build_label_mapping(train_df)
+    num_classes = len(set(y_train))
 
     tokenizer = TextTokenizer()
     tokenizer.fit(X_train)
-    vocab_artifact_path = save_vocab(MODEL_SAVE_ROOT, tokenizer)
 
     train_dataset = BankingDataset(texts=X_train, labels=y_train, tokenizer=tokenizer, max_length=MAX_LEN)
     val_dataset = BankingDataset(texts=X_val, labels=y_val, tokenizer=tokenizer, max_length=MAX_LEN)
@@ -98,7 +121,7 @@ def run() -> None:
         vocab_size=tokenizer.vocab_size,
         embedding_dim=EMBEDDING_DIM,
         hidden_dim=HIDDEN_DIM,
-        num_classes=len(set(y_train)),
+        num_classes=num_classes,
         rnn_type="lstm",
     ).to(DEVICE)
 
@@ -106,7 +129,7 @@ def run() -> None:
         vocab_size=tokenizer.vocab_size,
         embedding_dim=EMBEDDING_DIM,
         hidden_dim=HIDDEN_DIM,
-        num_classes=len(set(y_train)),
+        num_classes=num_classes,
         rnn_type="gru",
     ).to(DEVICE)
 
@@ -136,12 +159,26 @@ def run() -> None:
             "device": str(DEVICE),
         }
         log_experiment(
-            model=model_lstm,
+            model=None,
             metrics={"test_f1_macro": metrics_lstm["f1_macro"]},
             params=params_lstm,
-            artifacts={"vocab": str(vocab_artifact_path)},
-            model_artifact_path="model",
         )
+
+        lstm_artifact_dir = save_rnn_artifacts(
+            model=model_lstm,
+            tokenizer=tokenizer,
+            model_name="lstm",
+            rnn_type="lstm",
+            num_classes=num_classes,
+            label_mapping=label_mapping,
+        )
+        log_pyfunc_model(
+            model_dir=str(lstm_artifact_dir),
+            python_model=RNNPyFunc(),
+            artifact_path="model",
+            pip_requirements=["mlflow", "pandas", "torch"],
+        )
+
         version_lstm = register_model(
             run_id=run_info.info.run_id,
             artifact_path="model",
@@ -175,12 +212,26 @@ def run() -> None:
             "device": str(DEVICE),
         }
         log_experiment(
-            model=model_gru,
+            model=None,
             metrics={"test_f1_macro": metrics_gru["f1_macro"]},
             params=params_gru,
-            artifacts={"vocab": str(vocab_artifact_path)},
-            model_artifact_path="model",
         )
+
+        gru_artifact_dir = save_rnn_artifacts(
+            model=model_gru,
+            tokenizer=tokenizer,
+            model_name="gru",
+            rnn_type="gru",
+            num_classes=num_classes,
+            label_mapping=label_mapping,
+        )
+        log_pyfunc_model(
+            model_dir=str(gru_artifact_dir),
+            python_model=RNNPyFunc(),
+            artifact_path="model",
+            pip_requirements=["mlflow", "pandas", "torch"],
+        )
+
         version_gru = register_model(
             run_id=run_info.info.run_id,
             artifact_path="model",
@@ -191,11 +242,6 @@ def run() -> None:
             version_gru,
             "GRU recurrent classifier for Banking77 intents.",
         )
-
-    lstm_path = save_model(model_lstm, tokenizer, MODEL_SAVE_ROOT, "lstm")
-    print(f"LSTM model saved: {lstm_path}")
-    gru_path = save_model(model_gru, tokenizer, MODEL_SAVE_ROOT, "gru")
-    print(f"GRU model saved: {gru_path}")
 
 if __name__ == "__main__":
     run()

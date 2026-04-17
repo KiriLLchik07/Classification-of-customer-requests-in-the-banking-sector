@@ -1,7 +1,9 @@
 from pathlib import Path
+import json
 import mlflow
 import mlflow.sklearn
 import pandas as pd
+import joblib
 from catboost import CatBoostClassifier
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
@@ -13,9 +15,12 @@ from src.mlops.mlflow.dataset import file_md5
 from src.mlops.mlflow.logging import log_git_commit, seed_everything
 from src.mlops.mlflow.registry import register_model, set_model_description
 from src.mlops.mlflow.tracking import setup_mlflow
+from src.mlops.packaging.log_pyfunc_model import ClassicPyFunc, log_pyfunc_model
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DATA_DIR = PROJECT_ROOT / "data" / "processed"
+ARTIFACT_DIR = PROJECT_ROOT / "artifacts" / "local_models" / "classical"
+ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
 
 REGISTERED_BASELINE_NAME = "Banking77_LogisticRegression"
 BASELINE_DESCRIPTION = (
@@ -67,6 +72,10 @@ def log_common_params(train_path: Path, val_path: Path, model_family: str, algor
     )
     log_git_commit()
 
+def build_label_mapping(train_df: pd.DataFrame) -> dict[int, str]:
+    labels = sorted(train_df["label"].unique().tolist())
+    return {int(label): str(label) for label in labels}
+
 def run() -> pd.DataFrame:
     seed_everything(42)
     setup_mlflow()
@@ -80,6 +89,7 @@ def run() -> pd.DataFrame:
     y_train = train_df["label"].tolist()
     x_val = val_df["text"].tolist()
     y_val = val_df["label"].tolist()
+    label_mapping = build_label_mapping(train_df)
 
     models = build_models()
     results: dict[str, dict[str, float]] = {}
@@ -99,9 +109,20 @@ def run() -> pd.DataFrame:
         )
 
         models["logistic_regression"].fit(x_train, y_train)
+        logistic_artifact_dir = ARTIFACT_DIR / "logistic_regression"
+        logistic_artifact_dir.mkdir(parents=True, exist_ok=True)
+        joblib.dump(models["logistic_regression"], logistic_artifact_dir / "pipeline.joblib")
+        with open(logistic_artifact_dir / "label_mapping.json", "w", encoding="utf-8") as f:
+            json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+
         results["logistic_regression"] = evaluate_classical(models["logistic_regression"], x_val, y_val)
         mlflow.log_metrics(results["logistic_regression"])
-        mlflow.sklearn.log_model(models["logistic_regression"], artifact_path="model")
+        log_pyfunc_model(
+            model_dir=str(logistic_artifact_dir),
+            python_model=ClassicPyFunc(),
+            artifact_path="model",
+            pip_requirements=["mlflow", "pandas", "scikit-learn", "joblib"],
+        )
 
         version = register_model(
             run_id=run_info.info.run_id,
