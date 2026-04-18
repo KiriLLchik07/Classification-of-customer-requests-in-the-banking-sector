@@ -2,6 +2,7 @@ from mlflow.pyfunc import PyFuncModel
 import mlflow
 import pandas as pd
 import logging
+import json
 from pathlib import Path
 from config.settings import settings
 
@@ -21,7 +22,18 @@ class ModelService:
 
     def _load_label_mapping(self) -> None:
         project_root = Path(__file__).resolve().parents[4]
+        mapping_json_path = project_root / "config" / "label_mapping.json"
         train_df_path = project_root / "data" / "processed" / "train_df.csv"
+
+        try:
+            with open(mapping_json_path, encoding="utf-8") as f:
+                raw_mapping = json.load(f)
+            self.code_to_label = {int(code): str(label) for code, label in raw_mapping.items()}
+            self.label_to_code = {label.strip().lower(): code for code, label in self.code_to_label.items()}
+            logger.info("Label mapping loaded from %s", mapping_json_path)
+            return
+        except Exception as e:
+            logger.warning("Could not load label mapping from %s: %s", mapping_json_path, str(e))
 
         try:
             df = pd.read_csv(train_df_path)

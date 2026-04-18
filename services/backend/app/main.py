@@ -21,12 +21,20 @@ async def lifespan(app: FastAPI):
 
     logger.info("Start application")
 
-    model_service.load_model(settings.model_name, alias=settings.model_alias)
-    logger.info(
-        "Model loaded successfully. Model name: %s | alias=%s",
-        settings.model_name,
-        settings.model_alias,
-    )
+    try:
+        model_service.load_model(settings.model_name, alias=settings.model_alias)
+        logger.info(
+            "Model loaded successfully. Model name: %s | alias=%s",
+            settings.model_name,
+            settings.model_alias,
+        )
+    except Exception as e:
+        logger.warning(
+            "Startup model load skipped. Model=%s | alias=%s | error=%s",
+            settings.model_name,
+            settings.model_alias,
+            str(e),
+        )
 
     yield
 
