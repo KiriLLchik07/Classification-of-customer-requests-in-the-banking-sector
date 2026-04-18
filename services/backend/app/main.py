@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from app.api.v1.predict import router as predict_router
-from app.api.v1.models import router as models_router
-from app.api.v1.health import router as health_router
-from app.api.v1.model_info import router as model_info_router
-
-from app.services.model_service import model_service
-from app.core.logger import setup_logging
+from services.backend.app.api.v1.predict import router as predict_router
+from services.backend.app.api.v1.models import router as models_router
+from services.backend.app.api.v1.health import router as health_router
+from services.backend.app.api.v1.model_info import router as model_info_router
+from services.backend.app.api.v1.mlflow_models import router as mlflow_models_router
+from services.backend.app.services.model_service import model_service
+from services.backend.app.core.logger import setup_logging
 from config.settings import settings
 from prometheus_fastapi_instrumentator import PrometheusFastApiInstrumentator
 
@@ -21,11 +21,11 @@ async def lifespan(app: FastAPI):
 
     logger.info("Start application")
 
-    model_service.load_model(settings.model_name, stage=settings.model_stage)
+    model_service.load_model(settings.model_name, alias=settings.model_alias)
     logger.info(
-        "Model loaded successfully. Model name: %s | stage=%s",
+        "Model loaded successfully. Model name: %s | alias=%s",
         settings.model_name,
-        settings.model_stage,
+        settings.model_alias,
     )
 
     yield
@@ -42,6 +42,7 @@ app.include_router(health_router, prefix=settings.api_v1_prefix, tags=["Health"]
 app.include_router(predict_router, prefix=settings.api_v1_prefix, tags=["Prediction"])
 app.include_router(models_router, prefix=settings.api_v1_prefix, tags=["Models"])
 app.include_router(model_info_router, prefix=settings.api_v1_prefix, tags=["Model info"])
+app.include_router(mlflow_models_router, prefix=settings.api_v1_prefix, tags=["MLflow models"])
 
 @app.get("/")
 def root():

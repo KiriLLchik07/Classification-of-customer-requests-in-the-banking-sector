@@ -69,7 +69,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       MODEL_NAME: Banking77_DistilBERT
-      MODEL_STAGE: Production
+      MODEL_ALIAS: production
       DEBUG: false
 
 networks:

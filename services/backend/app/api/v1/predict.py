@@ -1,8 +1,8 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.request import PredictRequest
-from app.schemas.response import PredictResponse
-from app.services.model_service import ModelService, get_model_service
+from services.backend.app.schemas.request import PredictRequest
+from services.backend.app.schemas.response import PredictResponse
+from services.backend.app.services.model_service import ModelService, get_model_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -19,17 +19,38 @@ def predict(request: PredictRequest, model_service: ModelService = Depends(get_m
     """
     logger.info(f"Request received | model={request.model_name}")
 
-    if not model_service.is_model_loaded(request.model_name):
+    loaded_alias = model_service.get_loaded_alias(request.model_name)
+    model_needs_loading = (
+        (not model_service.is_model_loaded(request.model_name))
+        or (loaded_alias is not None and loaded_alias != request.model_alias)
+        or (loaded_alias is None)
+    )
+
+    if model_needs_loading:
         try:
-            logger.info(f"Model not loaded. Try to load model {request.model_name}")
-            model_service.load_model(request.model_name, stage=request.model_stage)
+            logger.info(
+                "Model load required. model=%s | requested_alias=%s | loaded_alias=%s",
+                request.model_name,
+                request.model_alias,
+                loaded_alias,
+            )
+            model_service.load_model(request.model_name, alias=request.model_alias)
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Model '{request.model_name}' not available. Error: {str(e)}")
 
     try:
         prediction = model_service.predict(model_name=request.model_name, text=request.text)
+        prediction_label, prediction_code = model_service.resolve_prediction(prediction)
+    except ValueError as e:
+        logger.warning(f"Prediction failed due to invalid model output: model={request.model_name}, error={str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Prediction failed: model={request.model_name}, error={str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction_failed. Error: {str(e)}")
 
-    return PredictResponse(prediction=prediction, model_name=request.model_name)
+    return PredictResponse(
+        prediction=prediction_label,
+        prediction_label=prediction_label,
+        prediction_code=prediction_code,
+        model_name=request.model_name,
+    )

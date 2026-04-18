@@ -1,16 +1,27 @@
 from pathlib import Path
 import time
 import streamlit as st
-from backend_client import DEFAULT_BACKEND_URL, get_models, predict_request
+from backend_client import (
+    DEFAULT_BACKEND_URL,
+    get_mlflow_models,
+    get_model_info,
+    get_models,
+    predict_request,
+)
 from styles.load_css import STYLES_PATH, load_css
 
 load_css(Path(STYLES_PATH) / "prediction_page.css")
 
 backend_url = st.session_state.get("backend_url", DEFAULT_BACKEND_URL)
-models_result = get_models(backend_url)
+loaded_models = get_models(backend_url)
+mlflow_models = get_mlflow_models(backend_url)
 
-fallback_models = ["DistilBERT", "GRU", "Logistic Regression"]
-model_names = models_result["models"] if models_result["ok"] and models_result["models"] else fallback_models
+loaded_model_names = loaded_models["models"] if loaded_models["ok"] else []
+registry_model_names = mlflow_models["model_names"] if mlflow_models["ok"] else []
+
+all_model_options = list(dict.fromkeys(loaded_model_names + registry_model_names))
+if not all_model_options:
+    all_model_options = ["Banking77_DistilBERT"]
 
 st.title("Prediction section", text_alignment="center")
 
@@ -25,12 +36,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-if not models_result["ok"]:
-    st.warning(f"Could not load models from backend: {models_result['error']}")
+if not loaded_models["ok"]:
+    st.warning(f"Could not load loaded-model list from backend: {loaded_models['error']}")
+if not mlflow_models["ok"]:
+    st.warning(f"Could not load model list from MLflow Registry: {mlflow_models['error']}")
 
 request_text = st.text_area(
     "Request text",
-    value="I need to issue a debit card. How can I do this?",
     label_visibility="collapsed",
     key="request_text",
 )
@@ -40,16 +52,16 @@ left_col, right_col = st.columns([1, 1.4], gap="large")
 with left_col:
     selected_model = st.selectbox(
         "Model",
-        model_names,
+        all_model_options,
         index=0,
         key="model_select",
         label_visibility="collapsed",
     )
-    selected_stage = st.selectbox(
-        "Model stage",
-        ["Production", "Staging"],
+    selected_alias = st.selectbox(
+        "Model alias",
+        ["production", "reserve", "baseline"],
         index=0,
-        key="model_stage_select",
+        key="model_alias_select",
         label_visibility="collapsed",
     )
 
@@ -71,30 +83,48 @@ if predict_clicked:
     if not clean_text:
         st.error("Request text cannot be empty.")
     else:
-        start = time.perf_counter()
-        prediction_result = predict_request(
+        model_info = get_model_info(
             backend_url=backend_url,
-            text=clean_text,
             model_name=selected_model,
-            model_stage=selected_stage,
+            alias=selected_alias,
         )
-        elapsed_ms = (time.perf_counter() - start) * 1000
-
-        if prediction_result["ok"]:
-            confidence = prediction_result.get("confidence")
-            confidence_block = f"<br>Confidence: <b>{confidence:.3f}</b>" if confidence is not None else ""
-            st.markdown(
-                f"""
-                <div class="result-box">
-                    Category of your request: <b>{prediction_result['prediction']}</b>.<br>
-                    Model used: <b>{prediction_result['model_name']}</b>.<br>
-                    Response time: <b>{elapsed_ms:.0f} ms</b>{confidence_block}
-                </div>
-                """,
-                unsafe_allow_html=True,
+        if not model_info["ok"]:
+            st.warning(
+                f"Alias '{selected_alias}' is not available for model '{selected_model}'. "
+                f"Details: {model_info['error']}"
             )
         else:
-            st.error(f"Prediction failed: {prediction_result['error']}")
+            start = time.perf_counter()
+            prediction_result = predict_request(
+                backend_url=backend_url,
+                text=clean_text,
+                model_name=selected_model,
+                model_alias=selected_alias,
+            )
+            elapsed_ms = (time.perf_counter() - start) * 1000
+
+            if prediction_result["ok"]:
+                confidence = prediction_result.get("confidence")
+                prediction_label = prediction_result.get("prediction_label") or prediction_result.get("prediction")
+                prediction_code = prediction_result.get("prediction_code")
+                confidence_block = f"<br>Confidence: <b>{confidence:.3f}</b>" if confidence is not None else ""
+                code_block = (
+                    f'Request code: <b>{prediction_code}</b>.'
+                    if prediction_code is not None
+                    else "Request code: <b>n/a</b>."
+                )
+                st.markdown(
+                    f"""
+                    <div class="result-box">
+                        Category of your request: "<b>{prediction_label}</b>". {code_block}<br>
+                        Model used: <b>{prediction_result['model_name']}</b>.<br>
+                        Response time: <b>{elapsed_ms:.0f} ms</b>{confidence_block}
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.error(f"Prediction failed: {prediction_result['error']}")
 else:
     st.markdown(
         """

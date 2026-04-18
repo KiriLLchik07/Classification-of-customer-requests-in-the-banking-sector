@@ -77,7 +77,7 @@ def predict_request(
     backend_url: str,
     text: str,
     model_name: str,
-    model_stage: str = "Production",
+    model_alias: str = "production",
 ) -> dict[str, Any]:
     status_code, payload, transport_error = _request_json(
         backend_url=backend_url,
@@ -86,7 +86,7 @@ def predict_request(
         payload={
             "text": text,
             "model_name": model_name,
-            "model_stage": model_stage,
+            "model_alias": model_alias,
         },
     )
     if transport_error:
@@ -95,17 +95,19 @@ def predict_request(
         return {
             "ok": True,
             "prediction": (payload or {}).get("prediction"),
+            "prediction_label": (payload or {}).get("prediction_label"),
+            "prediction_code": (payload or {}).get("prediction_code"),
             "model_name": (payload or {}).get("model_name"),
             "confidence": (payload or {}).get("confidence"),
         }
     return {"ok": False, "error": (payload or {}).get("detail", f"HTTP {status_code}")}
 
-def get_model_info(backend_url: str, model_name: str) -> dict[str, Any]:
+def get_model_info(backend_url: str, model_name: str, alias: str = "production") -> dict[str, Any]:
     safe_name = quote(model_name, safe="")
     status_code, payload, transport_error = _request_json(
         backend_url=backend_url,
         method="GET",
-        path=f"{API_PREFIX}/model_info/{safe_name}",
+        path=f"{API_PREFIX}/model_info/{safe_name}?alias={quote(alias, safe='')}",
     )
     if transport_error:
         return {"ok": False, "error": transport_error, "versions": []}
@@ -120,3 +122,16 @@ def get_model_info(backend_url: str, model_name: str) -> dict[str, Any]:
         "error": (payload or {}).get("detail", f"HTTP {status_code}"),
         "versions": [],
     }
+
+def get_mlflow_models(backend_url: str) -> dict[str, Any]:
+    status_code, payload, transport_error = _request_json(
+        backend_url=backend_url,
+        method="GET",
+        path=f"{API_PREFIX}/mlflow_models",
+    )
+    if transport_error:
+        return {"ok": False, "model_names": [], "error": transport_error}
+    if status_code == 200:
+        model_names = (payload or {}).get("model_names", [])
+        return {"ok": True, "model_names": model_names}
+    return {"ok": False, "model_names": [], "error": (payload or {}).get("detail", f"HTTP {status_code}")}

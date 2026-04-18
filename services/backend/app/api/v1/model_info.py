@@ -1,37 +1,41 @@
 from fastapi import APIRouter, HTTPException
 import mlflow
 import logging
+from services.backend.app.schemas.response import ModelInfoResponse, ModelInfoVersion
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-@router.get("/model_info/{model_name}")
-def model_info(model_name: str):
+@router.get("/model_info/{model_name}", response_model=ModelInfoResponse)
+def model_info(model_name: str, alias: str = "production"):
     """
     Возвращает информацию о модели из MLflow Registry
     """
     try:
         client = mlflow.tracking.MlflowClient(tracking_uri=settings.mlflow_tracking_uri)
-        versions = client.get_latest_versions(model_name)
+        requested_alias = alias
+        version = client.get_model_version_by_alias(name=model_name, alias=requested_alias)
 
-        if not versions:
-            raise HTTPException(status_code=404, detail=f"Model {model_name} not founded in registry")
-
-        result = []
-        for v in versions:
-            result.append({
-                "version": v.version,
-                "stage": v.current_stage,
-                "description": v.description
-            })
-
-        return {
-            "model_name": model_name,
-            "versions": result
-        }
+        aliases = list(getattr(version, "aliases", []) or [requested_alias])
+        return ModelInfoResponse(
+            model_name=model_name,
+            versions=[
+                ModelInfoVersion(
+                    version=str(version.version),
+                    alias=requested_alias,
+                    aliases=aliases,
+                    description=version.description,
+                )
+            ],
+        )
     except HTTPException:
         raise
     except Exception as e:
+        if "not found" in str(e).lower():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Model '{model_name}' with alias '{requested_alias}' not found in registry",
+            )
         logger.error(f"Failed to get model info. Model={model_name}, error={str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

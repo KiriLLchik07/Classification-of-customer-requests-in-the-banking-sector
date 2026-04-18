@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from app.services.model_service import get_model_service, ModelService
+from services.backend.app.services.model_service import get_model_service, ModelService
 
 router = APIRouter()
 
