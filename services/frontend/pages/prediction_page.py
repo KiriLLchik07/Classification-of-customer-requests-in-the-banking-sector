@@ -105,11 +105,18 @@ if predict_clicked:
 
             if prediction_result["ok"]:
                 confidence = prediction_result.get("confidence")
+                prediction_label = prediction_result.get("prediction_label") or prediction_result.get("prediction")
+                prediction_code = prediction_result.get("prediction_code")
                 confidence_block = f"<br>Confidence: <b>{confidence:.3f}</b>" if confidence is not None else ""
+                code_block = (
+                    f'Request code: <b>{prediction_code}</b>.'
+                    if prediction_code is not None
+                    else "Request code: <b>n/a</b>."
+                )
                 st.markdown(
                     f"""
                     <div class="result-box">
-                        Category of your request: <b>{prediction_result['prediction']}</b>.<br>
+                        Category of your request: "<b>{prediction_label}</b>". {code_block}<br>
                         Model used: <b>{prediction_result['model_name']}</b>.<br>
                         Response time: <b>{elapsed_ms:.0f} ms</b>{confidence_block}
                     </div>

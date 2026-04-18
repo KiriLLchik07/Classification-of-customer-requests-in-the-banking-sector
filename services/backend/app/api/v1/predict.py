@@ -40,8 +40,17 @@ def predict(request: PredictRequest, model_service: ModelService = Depends(get_m
 
     try:
         prediction = model_service.predict(model_name=request.model_name, text=request.text)
+        prediction_label, prediction_code = model_service.resolve_prediction(prediction)
+    except ValueError as e:
+        logger.warning(f"Prediction failed due to invalid model output: model={request.model_name}, error={str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error(f"Prediction failed: model={request.model_name}, error={str(e)}")
         raise HTTPException(status_code=500, detail=f"Prediction_failed. Error: {str(e)}")
 
-    return PredictResponse(prediction=prediction, model_name=request.model_name)
+    return PredictResponse(
+        prediction=prediction_label,
+        prediction_label=prediction_label,
+        prediction_code=prediction_code,
+        model_name=request.model_name,
+    )

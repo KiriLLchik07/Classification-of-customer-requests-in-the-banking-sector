@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field
 
 class PredictResponse(BaseModel):
     prediction: str = Field(..., description="Predicted query class")
+    prediction_label: str = Field(..., description="Human-readable predicted category")
+    prediction_code: Optional[int] = Field(None, description="Predicted category code")
     model_name: str = Field(..., description="Model used for prediction")
     confidence: Optional[float] = Field(
         None,

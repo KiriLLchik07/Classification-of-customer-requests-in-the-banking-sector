@@ -2,7 +2,7 @@ import mlflow
 import mlflow.pytorch
 from config.settings import settings
 
-REGISTERED_MODEL_NAME = "Banking77_Classifier"
+REGISTERED_MODEL_NAME = "Banking77_DistilBERT"
 EXPERIMENT_NAME = "banking77-intent-classification"
 
 def setup_mlflow():

@@ -2,7 +2,7 @@ from pathlib import Path
 
 from src.mlops.mlflow.registry import register_model
 from src.mlops.mlflow.tracking import log_experiment
-from src.mlops.packaging.log_pyfunc_model import log_pyfunc_model
+from src.mlops.packaging.log_pyfunc_model import TransformerPyFunc, log_pyfunc_model
 
 def test_log_experiment_logs_metrics_params_and_optional_model(monkeypatch):
     events = []
@@ -40,7 +40,7 @@ def test_register_model_returns_registered_version(monkeypatch):
         lambda model_uri, name: DummyRegisteredModel(),
     )
 
-    version = register_model("run-123", "model", "Banking77_Classifier")
+    version = register_model("run-123", "model", "Banking77_DistilBERT")
 
     assert version == 17
 
@@ -52,7 +52,11 @@ def test_log_pyfunc_model_uses_requested_artifact_path(monkeypatch):
 
     monkeypatch.setattr("src.mlops.packaging.log_pyfunc_model.mlflow.pyfunc.log_model", fake_log_model)
 
-    log_pyfunc_model(str(Path("artifacts/local_models/transformers")), artifact_path="serving-model")
+    log_pyfunc_model(
+        str(Path("artifacts/local_models/transformers")),
+        python_model=TransformerPyFunc(),
+        artifact_path="serving-model",
+    )
 
     assert captured["artifact_path"] == "serving-model"
     assert Path(captured["artifacts"]["model"]).as_posix() == "artifacts/local_models/transformers"

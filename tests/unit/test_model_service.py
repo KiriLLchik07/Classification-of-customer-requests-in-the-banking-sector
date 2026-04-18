@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 import pandas as pd
 import pytest
+from config.settings import settings
 
 from services.backend.app.services.model_service import ModelService
 
@@ -32,15 +33,15 @@ def test_load_model_reraises_mlflow_errors(monkeypatch):
     monkeypatch.setattr("services.backend.app.services.model_service.mlflow.pyfunc.load_model", fake_load_model)
 
     with pytest.raises(RuntimeError, match="registry unavailable"):
-        service.load_model("Banking77_Classifier")
+        service.load_model(settings.model_name)
 
 def test_predict_uses_dataframe_and_returns_first_prediction():
     service = ModelService()
     fake_model = Mock()
     fake_model.predict.return_value = pd.DataFrame({"prediction": ["cash_withdrawal"]})
-    service.models["Banking77_Classifier"] = fake_model
+    service.models[settings.model_name] = fake_model
 
-    prediction = service.predict("Need cash", "Banking77_Classifier")
+    prediction = service.predict("Need cash", settings.model_name)
 
     assert prediction == "cash_withdrawal"
     fake_model.predict.assert_called_once()
@@ -53,3 +54,23 @@ def test_get_model_raises_for_unknown_model():
 
     with pytest.raises(ValueError, match="not loaded"):
         service.get_model("missing-model")
+
+def test_resolve_prediction_maps_numeric_code_to_label():
+    service = ModelService()
+    service.code_to_label = {45: "card_arrival"}
+    service.label_to_code = {"card_arrival": 45}
+
+    label, code = service.resolve_prediction("45")
+
+    assert label == "card_arrival"
+    assert code == 45
+
+def test_resolve_prediction_maps_label_to_code_case_insensitive():
+    service = ModelService()
+    service.code_to_label = {45: "card_arrival"}
+    service.label_to_code = {"card_arrival": 45}
+
+    label, code = service.resolve_prediction("Card_Arrival")
+
+    assert label == "card_arrival"
+    assert code == 45

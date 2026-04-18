@@ -95,6 +95,8 @@ def predict_request(
         return {
             "ok": True,
             "prediction": (payload or {}).get("prediction"),
+            "prediction_label": (payload or {}).get("prediction_label"),
+            "prediction_code": (payload or {}).get("prediction_code"),
             "model_name": (payload or {}).get("model_name"),
             "confidence": (payload or {}).get("confidence"),
         }
