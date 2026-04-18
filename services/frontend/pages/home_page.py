@@ -52,7 +52,7 @@ col_lr.markdown(
     <div class="short-info-card">
         <p class="card-title">Logistic Regression</p>
         Baseline model in conjunction with TF-IDF features.
-        F1-macro: 0.866
+        F1-macro: 0.844
     </div>
     """,
     unsafe_allow_html=True,
@@ -63,7 +63,7 @@ col_gru.markdown(
     <div class="short-info-card">
         <p class="card-title">GRU</p>
         Recurrent neural model that handles sequence patterns in text.
-        F1-macro: 0.875
+        F1-macro: 0.872
     </div>
     """,
     unsafe_allow_html=True,
@@ -74,7 +74,7 @@ col_distilbert.markdown(
     <div class="short-info-card">
         <div class="card-title">DistilBERT</div>
         Transformer model with the best quality on current experiments.
-        F1-macro: 0.924
+        F1-macro: 0.92
     </div>
     """,
     unsafe_allow_html=True,
