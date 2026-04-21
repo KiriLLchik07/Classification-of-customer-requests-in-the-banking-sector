@@ -131,7 +131,7 @@ def log_pyfunc_model(
     pip_requirements: list[str] | None = None,
 ):
     requirements = pip_requirements or ["mlflow", "pandas"]
-    model_dir_normalized = Path(model_dir).resolve().as_posix()
+    model_dir_normalized = model_dir.replace("\\", "/")
     mlflow.pyfunc.log_model(
         artifact_path=artifact_path,
         python_model=python_model,
