@@ -1,56 +1,102 @@
 services:
-  mlflow:
-    image: python:3.11-slim
-    container_name: banking77_mlflow
-    working_dir: /app
-    command: >
-      bash -c "pip install mlflow==3.8.1 && 
-               mkdir -p /app/artifacts &&
-               mlflow server 
-               --host 0.0.0.0 
-               --port 5000 
-               --backend-store-uri sqlite:///mlflow.db 
-               --default-artifact-root /app/artifacts"
-    ports:
-      - "5000:5000"
+  mlflow_postgres:
+    image: postgres:16-alpine
+    container_name: postgres_db
+    env_file:
+      - config/environment.env
     volumes:
-      - ./mlflow_data:/app
-      - ./mlflow_data/mlflow.db:/app/mlflow.db
-    networks:
-      - banking77_network
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    container_name: banking77_redis
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - "6379:6379"
+      - "5433:5432"
     networks:
       - banking77_network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "pg_isready -U mlflow_db -d mlflow_db"]
       interval: 10s
       timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  minio:
+    image: minio/minio:latest
+    container_name: banking77_minio
+    env_file:
+      - config/environment.env
+    command: ["server", "--console-address", ":9001", "/data"]
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - banking77_network
+    restart: unless-stopped
+
+  minio_init:
+    image: minio/mc:latest
+    container_name: banking77_minio_init
+    depends_on:
+      - minio
+    env_file:
+      - config/environment.env
+    entrypoint: ["/bin/sh", "/init_minio.sh"]
+    volumes:
+      - ./services/minio/init_minio.sh:/init_minio.sh:ro
+    networks:
+      - banking77_network
+    restart: "no"
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: services/mlflow/Dockerfile
+    container_name: banking77_mlflow
+    depends_on:
+      mlflow_postgres:
+        condition: service_healthy
+      minio_init:
+        condition: service_completed_successfully
+    env_file:
+      - config/environment.env
+    command: ["/bin/sh", "/app/start_mlflow.sh"]
+    volumes:
+      - ./services/mlflow/start_mlflow.sh:/app/start_mlflow.sh:ro
+    ports:
+      - "5000:5000"
+    networks:
+      - banking77_network
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/')",
+        ]
+      interval: 30s
+      timeout: 10s
       retries: 5
+      start_period: 20s
 
   backend:
     build:
       context: .
       dockerfile: services/backend/Dockerfile
     container_name: banking77_api
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    env_file:
+      - config/environment.env
     ports:
       - "8000:8000"
-    depends_on:
-      redis:
-        condition: service_healthy
-      mlflow:
-        condition: service_started
+    volumes:
+      - ./services/backend/logs:/app/logs
     networks:
       - banking77_network
     restart: unless-stopped
-    volumes:
-      - ./services/backend/logs:/app/logs
     healthcheck:
       test:
         [
@@ -62,16 +108,28 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 180s
 
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      MODEL_NAME: Banking77_DistilBERT
-      MODEL_ALIAS: production
-      DEBUG: false
+  frontend:
+    build:
+      context: .
+      dockerfile: services/frontend/Dockerfile
+    container_name: banking77_frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    env_file:
+      - config/environment.env
+    ports:
+      - "8501:8501"
+    networks:
+      - banking77_network
+    restart: unless-stopped
 
 networks:
   banking77_network:
     driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
