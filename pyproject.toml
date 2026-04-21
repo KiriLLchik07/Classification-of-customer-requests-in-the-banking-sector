@@ -26,7 +26,8 @@ dependencies = [
     "jupyter (>=1.1.1,<2.0.0)",
     "catboost (>=1.2.8,<2.0.0)",
     "redis (>=7.3.0,<8.0.0)",
-    "streamlit (>=1.44.0,<2.0.0)"
+    "streamlit (>=1.44.0,<2.0.0)",
+    "boto3 (>=1.42.92,<2.0.0)"
 ]
 
 
@@ -36,6 +37,11 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 packages = [{ include = "src" }]
+
+[[tool.poetry.source]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+priority = "explicit"
 
 [dependency-groups]
 dev = [

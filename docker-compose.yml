@@ -40,7 +40,7 @@ services:
       - minio
     env_file:
       - config/environment.env
-    command: ["/bin/sh", "/init_minio.sh"]
+    entrypoint: ["/bin/sh", "/init_minio.sh"]
     volumes:
       - ./services/minio/init_minio.sh:/init_minio.sh:ro
     networks:
@@ -60,6 +60,8 @@ services:
     env_file:
       - config/environment.env
     command: ["/bin/sh", "/app/start_mlflow.sh"]
+    volumes:
+      - ./services/mlflow/start_mlflow.sh:/app/start_mlflow.sh:ro
     ports:
       - "5000:5000"
     networks:

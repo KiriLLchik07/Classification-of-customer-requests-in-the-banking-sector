@@ -8,8 +8,11 @@ set -eu
 : "${MLFLOW_PORT:=5000}"
 : "${MLFLOW_ALLOWED_HOSTS:=*}"
 : "${MLFLOW_CORS_ALLOWED_ORIGINS:=*}"
+: "${MLFLOW_RUN_DB_UPGRADE:=false}"
 
-mlflow db upgrade "${MLFLOW_BACKEND_STORE_URI}"
+if [ "${MLFLOW_RUN_DB_UPGRADE}" = "true" ]; then
+  mlflow db upgrade "${MLFLOW_BACKEND_STORE_URI}"
+fi
 
 exec mlflow server \
   --host "${MLFLOW_HOST}" \
