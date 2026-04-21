@@ -1,43 +1,40 @@
-import mlflow
+﻿import mlflow
 from mlflow.exceptions import RestException
 from config.settings import settings
 
-def set_model_stages_and_aliases(model_name: str, version_info: dict):
-    """
-    Устанавливает aliases для версий модели в MLflow Model Registry.
+def _latest_model_version(client: mlflow.MlflowClient, model_name: str) -> str | None:
+    versions = client.search_model_versions(f"name='{model_name}'")
+    if not versions:
+        return None
+    return str(max(int(v.version) for v in versions))
 
-    Args:
-        model_name (str): Имя модели в Model Registry.
-        version_info (dict): Словарь {version: [aliases]}, например:
-            {
-                1: ["baseline"],
-                2: ["reserve"],
-                3: ["production"]
-            }
-    """
-    client = mlflow.tracking.MlflowClient(tracking_uri=settings.mlflow_tracking_uri)
-    
-    for version, aliases in version_info.items():
-        for alias in aliases:
-            try:
-                client.set_registered_model_alias(
-                    name=model_name,
-                    alias=alias,
-                    version=version
-                )
-                print(f"Версия {version} -> alias: {alias}")
-            except RestException as e:
-                print(f"Ошибка при добавлении alias '{alias}' для версии {version}: {e}")
+def set_aliases_to_latest(model_name: str, aliases: list[str]) -> None:
+    client = mlflow.MlflowClient(tracking_uri=settings.mlflow_tracking_uri)
+    latest_version = _latest_model_version(client, model_name)
+
+    if latest_version is None:
+        print(f"Skip: model '{model_name}' not found in registry.")
+        return
+
+    for alias in aliases:
+        try:
+            client.set_registered_model_alias(
+                name=model_name,
+                alias=alias,
+                version=latest_version,
+            )
+            print(f"{model_name}: alias '{alias}' -> version {latest_version}")
+        except RestException as exc:
+            print(f"{model_name}: failed to set alias '{alias}': {exc}")
 
 if __name__ == "__main__":
-    REGISTERED_BASELINE_NAME = "Banking77_LogisticRegression"
-    REGISTERED_MODEL_NAME_LSTM = "Banking77_LSTM"
-    REGISTERED_MODEL_NAME_GRU = "Banking77_GRU"
-    REGISTERED_MODEL_NAME_BERT = "Banking77_BERT"
-    REGISTERED_MODEL_NAME_DISTILBERT = "Banking77_DistilBERT"
-    
-    set_model_stages_and_aliases(REGISTERED_BASELINE_NAME, {2: ["baseline"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_LSTM, {2: ["reserve"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_GRU, {2: ["reserve"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_BERT, {2: ["production"]})
-    set_model_stages_and_aliases(REGISTERED_MODEL_NAME_DISTILBERT, {2: ["production"]})
+    alias_plan = {
+        "Banking77_LogisticRegression": ["baseline"],
+        "Banking77_LSTM": ["reserve"],
+        "Banking77_GRU": ["reserve"],
+        "Banking77_BERT": ["production"],
+        "Banking77_DistilBERT": ["production"],
+    }
+
+    for model_name, aliases in alias_plan.items():
+        set_aliases_to_latest(model_name, aliases)

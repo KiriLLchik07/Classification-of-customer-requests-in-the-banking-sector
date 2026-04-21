@@ -8,9 +8,22 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from src.features.tokenizer import TextTokenizer
 from src.models.rnn.lstm_gru import RNNClassifier
 
+def resolve_model_artifact_dir(raw_path: str) -> Path:
+    direct = Path(raw_path)
+    if direct.exists():
+        return direct
+
+    normalized = Path(raw_path.replace("\\", "/"))
+    if normalized.exists():
+        return normalized
+
+    raise FileNotFoundError(
+        f"Model artifact path does not exist. raw='{raw_path}', normalized='{normalized}'"
+    )
+
 class TransformerPyFunc(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
-        model_path = Path(context.artifacts["model"])
+        model_path = resolve_model_artifact_dir(context.artifacts["model"])
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -36,7 +49,7 @@ class TransformerPyFunc(mlflow.pyfunc.PythonModel):
 
 class ClassicPyFunc(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
-        model_dir = Path(context.artifacts["model"])
+        model_dir = resolve_model_artifact_dir(context.artifacts["model"])
         self.pipeline = joblib.load(model_dir / "pipeline.joblib")
 
         label_mapping_path = model_dir / "label_mapping.json"
@@ -60,7 +73,7 @@ class ClassicPyFunc(mlflow.pyfunc.PythonModel):
 
 class RNNPyFunc(mlflow.pyfunc.PythonModel):
     def load_context(self, context):
-        model_dir = Path(context.artifacts["model"])
+        model_dir = resolve_model_artifact_dir(context.artifacts["model"])
 
         checkpoint = torch.load(model_dir / "checkpoint.pt", map_location="cpu")
         with open(model_dir / "config.json", encoding="utf-8") as f:
@@ -118,9 +131,11 @@ def log_pyfunc_model(
     pip_requirements: list[str] | None = None,
 ):
     requirements = pip_requirements or ["mlflow", "pandas"]
+    model_dir_normalized = Path(model_dir).resolve().as_posix()
     mlflow.pyfunc.log_model(
         artifact_path=artifact_path,
         python_model=python_model,
-        artifacts={"model": model_dir},
+        artifacts={"model": model_dir_normalized},
+        code_paths=["src"],
         pip_requirements=requirements,
     )

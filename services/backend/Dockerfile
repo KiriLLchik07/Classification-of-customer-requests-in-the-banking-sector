@@ -7,10 +7,12 @@ RUN pip install --no-cache-dir poetry==2.2.1
 COPY services/backend/pyproject.toml services/backend/poetry.lock* ./
 
 RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi --no-root
+    && poetry install --no-interaction --no-ansi --no-root \
+    && pip install --no-cache-dir boto3
 
 COPY services/backend/ ./services/backend/
 COPY config/ ./config/
+COPY src/ ./src/
 
 RUN mkdir -p /app/logs
 
