@@ -95,6 +95,7 @@ Classification-of-customer-requests-in-the-banking-sector/
 │
 ├── .github/workflows/  # CI (запуск тестов)
 ├── config/             # Конфигурация (settings, env, label mapping)
+├── data/               # train, val и test датасеты
 ├── notebooks/          # Исследования и эксперименты
 ├── services/           # Сервисный слой приложения
 │   ├── backend/        # FastAPI backend
