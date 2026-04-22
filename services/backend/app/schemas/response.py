@@ -29,11 +29,5 @@ class ModelInfoResponse(BaseModel):
     model_name: str
     versions: list[ModelInfoVersion] = Field(default_factory=list)
 
-class ModelInfoResponce(BaseModel):
-    model_name: str
-    version: str
-    alias: str
-    description: Optional[str] = None
-
 class MlflowModelsResponse(BaseModel):
     model_names: list[str] = Field(default_factory=list)
