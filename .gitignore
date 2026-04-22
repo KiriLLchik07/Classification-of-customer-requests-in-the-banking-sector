@@ -2,7 +2,7 @@
 .venv
 backend/.venv
 __pycache__/
-/data
+
 notebooks/catboost_info
 notebooks/mlflow.db
 notebooks/mlruns
