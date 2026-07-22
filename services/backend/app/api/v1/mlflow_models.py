@@ -10,7 +10,7 @@ router = APIRouter()
 @router.get("/mlflow_models", response_model=MlflowModelsResponse)
 def get_mlflow_models():
     """
-    Получает список всех зарегистрированных модель в MLflow
+    Получает список всех зарегистрированных моделей в MLflow
     """
     try:
         client = mlflow.tracking.MlflowClient(tracking_uri=settings.mlflow_tracking_uri)
